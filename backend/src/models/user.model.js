@@ -4,32 +4,44 @@ import bcrypt from "bcryptjs";
 const userSchema = new mongoose.Schema({
     email: {
         type: String,
-        required: true,
+        required: [true, "El correo electrónico es obligatorio"],
         unique: true,
-    },
-    last_name: {
-        type: String,
+        lowercase: true,
+        trim: true,
+        match: [/^\S+@\S+\.\S+$/, "Debe ser un correo electrónico válido"],
     },
     first_name: {
         type: String,
+        trim: true,
+        required: [true, "El nombre es obligatorio"],
+    },
+    last_name: {
+        type: String,
+        trim: true,
+        required: [true, "El apellido es obligatorio"],
     },
     password: {
         type: String,
         required: function () {
             return !this.googleId;
         },
+        minlength: [6, "La contraseña debe tener al menos 6 caracteres"],
+        select: false,
     },
     role: {
         type: String,
-        enum: ["assistant", "organizer", "presenter"],
+        enum: ["attendee", "presenter", "admin"],
+        default: "attendee",
         required: true,
     },
     speciality: {
         type: String,
     },
     googleId: {
-    type: String,
+        type: String,
     },
+}, {
+    timestamps: true,
 });
 
 userSchema.pre("save", async function (next) {
