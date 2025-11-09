@@ -30,15 +30,7 @@ export const AuthController = {
     },
 
     register: async (req, res) => {
-        const { email, password, first_name, last_name, role, speciality } = req.body;
-
-        const user_role = req.session?.user?.role;
-        if (role !== "attendee" && user_role !== "admin") {
-            return ApiResponse.error(res, {
-                message: "No tienes permiso para asignar este rol",
-                status: 403,
-            });
-        }
+        const { email, password, first_name, last_name, speciality } = req.body;
 
         try {
             const data = await AuthService.register({
@@ -46,7 +38,7 @@ export const AuthController = {
                 password,
                 first_name,
                 last_name,
-                role,
+                role: "attendee",
                 speciality,
             });
 

@@ -22,6 +22,16 @@ export const UserService = {
         }
     },
 
+    createUser: async (data) => {
+        try {
+            const newUser = new User(data);
+            await newUser.save();
+            return newUser;
+        } catch (error) {
+            throw ApiError.internal("Error al crear el usuario");
+        }
+    },
+
     updateUser: async (userId, data) => {
         const disallowed = ["_id", "password"];
         disallowed.forEach(field => delete data[field]);

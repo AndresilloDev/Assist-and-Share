@@ -33,6 +33,20 @@ export const UserController = {
         }
     },
 
+    createUser: async (req, res) => {
+        try {
+            const data = req.body;
+            const newUser = await UserService.createUser(data);
+
+            return ApiResponse.success(res, {
+                message: "Usuario creado correctamente",
+                value: newUser,
+            });
+        } catch (error) {
+            return controllerError(res, error);
+        }
+    },
+
     updateUser: async (req, res) => {
         try {
             const { id } = req.params;
