@@ -97,13 +97,11 @@ export const AuthController = {
 
     googleCallback: (req, res) => {
         const user = req.user;
-        const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
+        const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET,{ 
             expiresIn: "30d",
         });
 
-        return ApiResponse.success(res, {
-            message: "Inicio de sesión con Google exitoso",
-            value: { user, token },
-        });
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:6767';
+        res.redirect(`${frontendUrl}/api/auth/google/callback?token=${token}`);
     },
 };
