@@ -29,10 +29,7 @@ export default function EventFilterBar({
   onPresenterChange,
   presenters,
 }: EventFilterBarProps) {
-  // --- Helpers y Optimizaciones (useMemo) ---
 
-  // Optimización: Memoizar las opciones de los ponentes para evitar
-  // recalcular el array en cada renderizado.
   const presenterOptions = useMemo(() => {
     return [
       { value: "all", label: "Todos los ponentes" },
@@ -43,28 +40,32 @@ export default function EventFilterBar({
     ]
   }, [presenters])
 
-  // --- Renderizado ---
-
   return (
-    <div className="flex flex-wrap gap-4 mb-8">
-      <CustomSelect
-        value={typeFilter}
-        onChange={onTypeChange}
-        options={[
-          { value: "all", label: "Todos los tipos" },
-          { value: "workshop", label: "Taller" },
-          { value: "conference", label: "Conferencia" },
-          { value: "seminar", label: "Seminario" },
-        ]}
-        placeholder="Tipo de evento"
-      />
+    // Se usa flex-col en móvil y flex-row en sm para arriba
+    <div className="flex flex-col sm:flex-row flex-wrap gap-4 mb-8">
+      {/* Contenedores envolventes para forzar ancho completo en móvil si el CustomSelect no lo hace por defecto */}
+      <div className="w-full sm:w-auto min-w-[200px]">
+        <CustomSelect
+          value={typeFilter}
+          onChange={onTypeChange}
+          options={[
+            { value: "all", label: "Todos los tipos" },
+            { value: "workshop", label: "Taller" },
+            { value: "conference", label: "Conferencia" },
+            { value: "seminar", label: "Seminario" },
+          ]}
+          placeholder="Tipo de evento"
+        />
+      </div>
 
-      <CustomSelect
-        value={presenterFilter}
-        onChange={onPresenterChange}
-        options={presenterOptions}
-        placeholder="Ponente"
-      />
+      <div className="w-full sm:w-auto min-w-[200px]">
+        <CustomSelect
+          value={presenterFilter}
+          onChange={onPresenterChange}
+          options={presenterOptions}
+          placeholder="Ponente"
+        />
+      </div>
     </div>
   )
 }

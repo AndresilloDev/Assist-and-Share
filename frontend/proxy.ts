@@ -23,6 +23,7 @@ const roleBasedRoutes: Record<string, string[]> = {
   '/admin': ['admin'],
   '/presenter/dashboard': ['presenter', 'admin'],
   '/events': ['attendee', 'admin', 'presenter'],
+  '/my-inscriptions': ['attendee'],
 };
 
 async function verifyToken(token: string) {
@@ -69,7 +70,7 @@ export async function proxy(request: NextRequest) {
     console.log('[Proxy] Invalid token, redirecting to /login');
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('error', 'session_expired');
-    
+
     const response = NextResponse.redirect(loginUrl);
     response.cookies.delete('auth-token');
     return response;

@@ -6,7 +6,7 @@ export default function LogoutButton() {
   const { logout } = useAuth();
 
   return (
-    <button onClick={logout}>
+    <button onClick={logout} className="py-1 px-5 underline text-gray-300 rounded-lg text-xs hover:cursor-pointer">
       Cerrar sesión
     </button>
   );

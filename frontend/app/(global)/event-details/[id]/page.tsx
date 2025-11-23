@@ -122,19 +122,19 @@ export default function EventDetail() {
     }
   }
 
-const fetchUserAssistance = async () => {
-  if (!user) return
+  const fetchUserAssistance = async () => {
+    if (!user) return
 
-  const { data } = await api.get(`/assistance/user/${user.id}`)
-  const found = data.value.find((a: any) => a.event?._id === id)
-  console.log("Asistencia encontrada:", found)
+    const { data } = await api.get(`/assistance/user/${user.id}`)
+    const found = data.value.find((a: any) => a.event?._id === id)
+    console.log("Asistencia encontrada:", found)
 
-  if (!found || found.status === "cancelled") {
-    setAssistance(null)
-  } else {
-    setAssistance(found)
+    if (!found || found.status === "cancelled") {
+      setAssistance(null)
+    } else {
+      setAssistance(found)
+    }
   }
-}
 
 
 
@@ -171,22 +171,22 @@ const fetchUserAssistance = async () => {
     }
   }
 
-const handleCancel = async () => {
-  if (!assistance) return
-  try {
-    // optimista: deshabilitar UI o marcar null inmediatamente
-    setAssistance(null)
+  const handleCancel = async () => {
+    if (!assistance) return
+    try {
+      // optimista: deshabilitar UI o marcar null inmediatamente
+      setAssistance(null)
 
-    await api.delete(`/assistance/${assistance._id}`)
-    // volver a consultar para garantizar consistencia (y actualizar event si aplica)
-    await fetchUserAssistance()
-    await fetchEvent()
-  } catch (err: any) {
-    // si falla, volver a intentar obtener el estado real
-    await fetchUserAssistance()
-    setError(err.response?.data?.message || "Error al cancelar inscripción")
+      await api.delete(`/assistance/${assistance._id}`)
+      // volver a consultar para garantizar consistencia (y actualizar event si aplica)
+      await fetchUserAssistance()
+      await fetchEvent()
+    } catch (err: any) {
+      // si falla, volver a intentar obtener el estado real
+      await fetchUserAssistance()
+      setError(err.response?.data?.message || "Error al cancelar inscripción")
+    }
   }
-}
 
   const handleRemoveMaterial = (materialId: string) => {
     setMaterials(materials.filter((m) => m.id !== materialId))
@@ -231,13 +231,13 @@ const handleCancel = async () => {
     )
   }
 
-  // --- JSX Principal ---
+  // --- tSX Principal ---
 
   return (
     <div className="min-h-screen text-white px-8 py-10" style={{ background: "linear-gradient(180deg, #1B293A 0%, #040711 10%)" }}>
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          <EventHeader imageUrl="https://encrypted-tbn0.gstatic.com/images?q=tbn:AN-d9GcS9VzbIhiRMB3MDNu1_rl05tug8QtXXRpKuUA&s" />
+          <EventHeader imageUrl="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS9VzbIhiRMB3MDNu1_rl05tug8QtXXRpKuUA&s" />
 
           <div className="flex flex-col justify-between">
             <EventInfo
@@ -262,7 +262,7 @@ const handleCancel = async () => {
               isEnrolled={!!assistance && ACTIVE_STATUSES.includes(assistance.status)}
               isPending={isPending}
               isApproved={isApproved}
-              onViewQR={() => {}}
+              onViewQR={() => { }}
               isPastEvent={isPastEvent}
             />
 
