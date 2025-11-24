@@ -10,7 +10,7 @@ router.get('/', (req, res, next) => {
   if (req.query.role === 'presenter') {
     return UserController.getAllUsers(req, res);
   }
-  return authMiddleware(["admin"])(req, res, next);
+  return authMiddleware(["admin"]), UserController.getAllUsers(req, res);
 });
 //Los /me deben ir antes de los /:id
 router.get('/me', authMiddleware(), UserController.getCurrentUser);
