@@ -43,7 +43,12 @@ export const UserService = {
     },
 
     deleteUser: async (userId) => {
-        const deleted = await User.findByIdAndDelete(userId);
+        const user = await User.findById(userId);
+        if (!user) {
+            throw ApiError.notFound("Usuario no encontrado");
+        }
+
+        const deleted = await user.logicalDelete();
         return !!deleted;
     },
 

@@ -30,6 +30,32 @@ export const EventController = {
         }
     },
 
+    startEvent: async (req, res) => {
+        try {
+            const eventId = req.params.id;
+            const event = await EventService.startEvent(eventId);
+            return ApiResponse.success(res, {
+                message: "Evento iniciado correctamente",
+                value: event,
+            });
+        } catch (error) {
+            return controllerError(res, error);
+        }
+    },
+
+    completeEvent: async (req, res) => {
+        try {
+            const eventId = req.params.id;
+            const event = await EventService.completeEvent(eventId);
+            return ApiResponse.success(res, {
+                message: "Evento completado correctamente",
+                value: event,
+            });
+        } catch (error) {
+            return controllerError(res, error);
+        }
+    },
+
     createEvent: async (req, res) => {
         try {
             const data = req.body;

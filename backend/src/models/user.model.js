@@ -39,6 +39,10 @@ const userSchema = new mongoose.Schema({
     googleId: {
         type: String,
     },
+    deleted: {
+        type: Boolean,
+        default: false,
+    }
 }, {
     timestamps: true,
 });
@@ -53,5 +57,11 @@ userSchema.pre("save", async function (next) {
 userSchema.methods.matchPassword = async function (enteredPassword) {
     return await bcrypt.compare(enteredPassword, this.password);
 };
+
+userSchema.methods.logicalDelete = async function () {
+    this.deleted = true;
+    await this.save();
+    return this;
+}
 
 export const User = mongoose.model("User", userSchema);

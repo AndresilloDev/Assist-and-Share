@@ -11,6 +11,11 @@ const eventSchema = new mongoose.Schema(
             type: String,
             trim: true,
         },
+        status: {
+            type: String,
+            enum: ["scheduled", "ongoing", "completed", "cancelled"],
+            default: "scheduled",
+        },
         capacity: {
             type: Number,
             required: function () {
@@ -77,10 +82,21 @@ const eventSchema = new mongoose.Schema(
             enum: ["workshop", "seminar", "conference"],
             required: [true, "El tipo de evento es obligatorio"],
         },
+        deleted: {
+            type: Boolean,
+            default: false,
+        }
     },
     {
         timestamps: true,
     }
 );
+
+eventSchema.methods.logicalDelete = async function () {
+    this.deleted = true;
+    this.status = "cancelled";
+    await this.save();
+    return this;
+}
 
 export const Event = mongoose.model("Event", eventSchema);
