@@ -68,28 +68,15 @@ export const AssistanceService = {
         }
     },
 
-    checkIn: async (assistanceId, userId) => {
-        try {
-            const assistance = await Assistance.findById(assistanceId);
-            if (!assistance) {
-                throw new ApiError.notFound("Asistencia no encontrada");
-            }
+    checkIn: async (assistanceId) => {
+        const assistance = await Assistance.findById(assistanceId);
+        if (!assistance) throw new ApiError.notFound("Asistencia no encontrada");
 
-            if (assistance.status === "cancelled") {
-                throw new ApiError.badRequest("No se puede hacer check-in a una asistencia cancelada");
-            }
+        assistance.status = "attended";
+        assistance.checkInTime = new Date();
+        await assistance.save();
 
-            if (assistance.user.toString() !== userId) {
-                throw new ApiError.forbidden("No tienes permiso para hacer check-in a esta asistencia");
-            }
-
-            assistance.status = "attended";
-            assistance.checkInTime = new Date();
-            await assistance.save();
-            return assistance;
-        } catch (error) {
-            throw error;
-        }
+        return assistance;
     },
 
     updateStatus: async (assistanceId, status) => {

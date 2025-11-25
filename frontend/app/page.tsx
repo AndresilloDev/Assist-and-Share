@@ -1,5 +1,4 @@
-import Link from "next/link";
-import LogoutButton from "./components/LogoutButton";
+import LogoutButton from "@/app/components/LogoutButton";
 
 export default function Home() {
   return (
@@ -7,7 +6,7 @@ export default function Home() {
       <div className="text-center space-y-8 px-4">
         <div className="space-y-4">
           <h1 className="text-5xl font-bold text-white">
-            Bienvenido crack
+            Bienvenido
           </h1>
           <LogoutButton /> 
         </div>

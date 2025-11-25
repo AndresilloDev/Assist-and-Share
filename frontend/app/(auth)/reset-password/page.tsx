@@ -14,10 +14,11 @@ import AuthLink from "../../components/(auth)/AuthLink";
 
 function ResetPasswordForm() {
   const [password, setPassword] = useState("");
+  const [token, setToken] = useState("");
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
-  const [token, setToken] = useState("");
 
   const router = useRouter();
   const searchParams = useSearchParams();

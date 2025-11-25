@@ -25,6 +25,7 @@ const ERROR_MESSAGES: Record<string, string> = {
 function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -33,7 +34,7 @@ function LoginForm() {
   const { isAuthenticated, loading: authLoading, checkAuth } = useAuth();
 
   useEffect(() => {
-    if (!authLoading && isAuthenticated) router.push("/");
+    if (!authLoading && isAuthenticated) router.push("/events");
   }, [authLoading, isAuthenticated, router]);
 
   useEffect(() => {
@@ -59,7 +60,7 @@ function LoginForm() {
       
       await checkAuth();
       
-      setTimeout(() => router.push("/"), 100);
+      setTimeout(() => router.push("/events"), 100);
     } catch (err) {
       const message = err instanceof AxiosError 
         ? err.response?.data?.message || "Error del servidor"

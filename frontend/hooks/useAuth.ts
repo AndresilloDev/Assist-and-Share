@@ -23,6 +23,27 @@ export function useAuth() {
     checkAuth();
   }, []);
 
+  useEffect(() => {
+  const interval = setInterval(() => {
+    const token = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('auth-token='))
+      ?.split('=')[1];
+
+    if (!token && user !== null) {
+      // Usuario ya no tiene token
+      setUser(null);
+    } else if (token && (!user || user.id !== jwtDecode<User>(token).id)) {
+      // Nuevo login detectado
+      const decoded = jwtDecode<User>(token);
+      setUser(decoded);
+    }
+  }, 1000); // cada 1 segundo
+
+  return () => clearInterval(interval);
+}, [user]);
+
+
   const checkAuth = () => {
     try {
       const token = document.cookie

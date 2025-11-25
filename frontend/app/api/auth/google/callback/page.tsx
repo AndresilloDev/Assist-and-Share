@@ -27,11 +27,11 @@ function GoogleCallbackLogic() {
       // Guardar en cookie (Es la que usa el proxy / middleware)
       document.cookie = `auth-token=${token}; path=/; max-age=${60 * 60 * 24 * 30}; samesite=lax`;
       
-      console.log("[Google Callback] Cookie guardada, redirigiendo a /");
+      console.log("[Google Callback] Cookie guardada, redirigiendo a /events");
       
       // Pequeño delay para asegurar que la cookie se guardó
       setTimeout(() => {
-        router.push("/");
+        router.push("/events");
       }, 100);
       
     } else {
@@ -42,13 +42,13 @@ function GoogleCallbackLogic() {
   }, [router, searchParams]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="flex min-h-screen items-center justify-center">
       <div className="text-center">
-        <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mb-6" />
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+        <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-2 border-sky-600 mb-6" />
+        <h2 className="text-2xl font-base text-white mb-2">
           Procesando inicio de sesión
         </h2>
-        <p className="text-gray-600">
+        <p className="text-white">
           Autenticando con Google...
         </p>
       </div>

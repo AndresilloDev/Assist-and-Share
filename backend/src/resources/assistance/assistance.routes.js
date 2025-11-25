@@ -17,13 +17,16 @@ router.delete("/:assistanceId", authMiddleware(["attendee"]), AssistanceControll
  */
 router.patch('/checkin/:assistanceId', authMiddleware(["presenter", "admin"]), AssistanceController.checkIn);
 
+// Ruta que se abre desde el QR, SIN autenticación
+router.get("/checkin/:assistanceId", AssistanceController.checkInPublic);
+
 // Actualizar estado (approve / reject / attended / cancelled)
-router.patch("/status/:assistanceId", authMiddleware(["presenter", "admin"]), AssistanceController.updateStatus);
+router.patch("/status/:assistanceId", authMiddleware(["presenter", "admin", "attendee"]), AssistanceController.updateStatus);
 
 // Obtener asistencias de un usuario
 router.get("/user/:userId", authMiddleware(["attendee", "presenter", "admin"]), AssistanceController.getByUser);
 
 // Obtener asistencias de un evento
-router.get("/event/:eventId", authMiddleware(["presenter", "admin"]), AssistanceController.getByEvent);
+router.get("/event/:eventId", authMiddleware(["presenter", "admin", "attendee"]), AssistanceController.getByEvent);
 
 export default router;

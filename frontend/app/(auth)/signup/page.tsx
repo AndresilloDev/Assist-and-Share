@@ -19,6 +19,7 @@ function RegisterForm() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [password, setPassword] = useState("");
+  
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
