@@ -111,26 +111,14 @@ export const EventService = {
 
                 try {
                     await sendEmail({
-                    bcc: emails,
-                    subject: `Actualización del evento: ${event.title}`,
-                    text: `El evento "${event.title}" ha sido actualizado. Por favor, revisa los detalles actualizados.`,
-<<<<<<< HEAD
-                    html: updateEventHtml(event),
-                });
-=======
-                    html: `
-                        <h2>Actualización del evento: ${event.title}</h2>
-                        <p>El evento al que te inscribiste ha sido modificado.</p>
-                        <p><strong>Fecha:</strong> ${new Date(event.date).toLocaleString()}</p>
-                        <p><strong>Modalidad:</strong> ${event.modality}</p>
-                        <p><strong>Ubicación/Enlace:</strong> ${event.location || event.link}</p>
-                        <p>Por favor revisa los detalles actualizados en la plataforma.</p>
-                    `,
+                        bcc: emails,
+                        subject: `Actualización del evento: ${event.title}`,
+                        text: `El evento "${event.title}" ha sido actualizado. Por favor, revisa los detalles actualizados.`,
+                        html: updateEventHtml(event),
                     });
                 } catch (emailError) {
                     console.error("No se pudo enviar correo de actualización:", emailError);
                 }
->>>>>>> 0a76651b830b8ea40ac8857c912d2ae67aa931d8
             }
 
             return event;
