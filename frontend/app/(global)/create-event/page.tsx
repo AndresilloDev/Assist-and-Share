@@ -55,6 +55,20 @@ const MODALITY_OPTIONS = [
     { value: "hybrid", label: "Híbrido" },
 ]
 
+// Función auxiliar para obtener fecha mínima (fuera del componente)
+function getMinDateTime(): string {
+    const now = new Date()
+    // Agregar 1 hora a la fecha actual
+    now.setHours(now.getHours() + 1)
+
+    const year = now.getFullYear()
+    const month = String(now.getMonth() + 1).padStart(2, '0')
+    const day = String(now.getDate()).padStart(2, '0')
+    const hours = String(now.getHours()).padStart(2, '0')
+    const minutes = String(now.getMinutes()).padStart(2, '0')
+    return `${year}-${month}-${day}T${hours}:${minutes}`
+}
+
 export default function CreateEventPage() {
     const router = useRouter()
     const { user } = useAuth()
@@ -63,7 +77,9 @@ export default function CreateEventPage() {
     const [isLoading, setIsLoading] = useState(true)
     const [isSaving, setIsSaving] = useState(false)
     const [error, setError] = useState("")
+    const [dateError, setDateError] = useState("")
     const [presenters, setPresenters] = useState<Presenter[]>([])
+    const [minDateTime] = useState(getMinDateTime())
 
     const [formData, setFormData] = useState<EventFormData>({
         title: "",
@@ -111,6 +127,23 @@ export default function CreateEventPage() {
 
     const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target
+
+        // Validación especial para el campo de fecha
+        if (name === 'date') {
+            const selectedDate = new Date(value)
+            const currentDate = new Date()
+            // Agregar 1 hora a la fecha actual para la validación
+            const minimumDate = new Date(currentDate.getTime() + 60 * 60 * 1000)
+
+            // Si la fecha seleccionada es anterior a la fecha mínima (ahora + 1 hora)
+            if (selectedDate < minimumDate) {
+                setDateError("No puedes seleccionar fechas pasadas. El evento debe programarse al menos 1 hora después de la hora actual.")
+                return
+            } else {
+                setDateError("") // Limpiar error si la fecha es válida
+            }
+        }
+
         setFormData(prev => ({ ...prev, [name]: value }))
     }
 
@@ -134,12 +167,42 @@ export default function CreateEventPage() {
         }))
     }
 
-    const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            const file = e.target.files[0]
-            setMaterials(prev => [...prev, { name: file.name, size: `${(file.size / 1024).toFixed(1)} KB` }])
-        }
+    const handleFileUpload = async (e: ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return
+
+    const file = e.target.files[0]
+    const formDataToSend = new FormData()
+    formDataToSend.append("file", file)
+
+    setError("")
+    setIsSaving(true) // opcional: puedes usar otro estado como isUploading
+
+    try {
+        // Llamada al backend: /uploads/material
+        const uploadRes = await api.post("/uploads/material", formDataToSend, {
+            headers: { "Content-Type": "multipart/form-data" }
+        })
+
+        const secureUrl = uploadRes.data.secure_url
+
+        // Agregar el archivo subido a la lista visual
+        setMaterials(prev => [
+            ...prev,
+            {
+                name: file.name,
+                size: `${(file.size / 1024).toFixed(1)} KB`,
+                url: secureUrl
+            }
+        ])
+
+    } catch (err: any) {
+        console.error(err)
+        setError("Error al subir el archivo. Inténtalo nuevamente.")
+    } finally {
+        setIsSaving(false)
     }
+}
+
 
     const handleRemoveMaterial = (index: number) => {
         setMaterials(prev => prev.filter((_, i) => i !== index))
@@ -253,9 +316,15 @@ export default function CreateEventPage() {
                                     name="date"
                                     value={formData.date}
                                     onChange={handleChange}
+                                    min={minDateTime}
                                     className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:border-blue-500 focus:outline-none [color-scheme:dark]"
                                     required
                                 />
+                                {dateError && (
+                                    <div className="mt-2 flex items-start gap-2 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
+                                        <div className="text-red-400 text-xs leading-relaxed">{dateError}</div>
+                                    </div>
+                                )}
                             </div>
                             <div>
                                 <label className="block text-sm text-gray-400 mb-1">Duración (minutos)</label>
@@ -398,7 +467,7 @@ export default function CreateEventPage() {
                     {/* Footer Actions (Bottom) */}
                     <div className="flex justify-end pt-4">
                         <button
-                            onClick={handleCreate}
+                            type="submit"
                             disabled={isSaving}
                             className="w-full md:w-auto px-8 py-2.5 bg-white text-black font-semibold rounded-xl hover:bg-gray-200 hover:rounded-3xl duration-300 transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer shadow-lg shadow-white/10"
                         >

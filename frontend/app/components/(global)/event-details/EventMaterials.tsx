@@ -1,45 +1,42 @@
-"use client"
+"use client";
 
-import { Upload } from 'lucide-react'
-import HoverCard from "@/app/components/(ui)/HoverCard"
-import MaterialItem from "@/app/components/(global)/event-details/MaterialItem"
+import MaterialItem from "./MaterialItem";
 
 interface Material {
-  id: string
-  name: string
-  type: "pptx" | "xlsx" | "pdf" | "docx"
-  uploadDate: string
-  url: string
+  id: string;
+  name: string;
+  url: string;
+  uploadDate: string;
 }
 
 interface EventMaterialsProps {
-  materials: Material[]
-  canEdit: boolean
-  onRemove: (id: string) => void
+  materials: Material[];
+  canEdit: boolean;
+  onRemove: (id: string) => void;
 }
 
 export default function EventMaterials({ materials, canEdit, onRemove }: EventMaterialsProps) {
   return (
-    <HoverCard className="p-8">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold">Material:</h2>
-        {canEdit && (
-          <button className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-medium hover:from-blue-600 hover:to-blue-700 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/30">
-            <Upload size={16} />
-            Subir archivo
-          </button>
-        )}
-      </div>
-      <div className="space-y-4">
-        {materials.map((material) => (
+    <section className="mt-10">
+      <h3 className="text-2xl font-semibold mb-4">Material del Evento</h3>
+
+      {/* Si no hay archivos */}
+      {materials.length === 0 && (
+        <p className="text-gray-400">
+          No se ha agregado ningún material para este evento.
+        </p>
+      )}
+
+      <div className="grid grid-cols-1 gap-4 mt-4">
+        {materials.map((m) => (
           <MaterialItem
-            key={material.id}
-            material={material}
+            key={m.id}
+            material={m}
             canEdit={canEdit}
-            onRemove={() => onRemove(material.id)}
+            onRemove={() => onRemove(m.id)}
           />
         ))}
       </div>
-    </HoverCard>
-  )
+    </section>
+  );
 }

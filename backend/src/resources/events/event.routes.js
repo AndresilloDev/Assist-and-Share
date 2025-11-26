@@ -1,13 +1,21 @@
-import e from "express";
-import { EventController } from "./event.controller.js";
-const router = e.Router();
+import express from "express"
+const router = express.Router()
 
-router.get('/', EventController.getAllEvents);
-router.get('/:id', EventController.getEventById);
-router.post('/', EventController.createEvent);
-router.post('/:id/start', EventController.startEvent);
-router.post('/:id/complete', EventController.completeEvent);
-router.put('/:id', EventController.updateEvent);
-router.delete('/:id', EventController.deleteEvent);
+import upload from "../../middlewares/upload.js"
+import { EventController } from "./event.controller.js"
 
-export default router;
+
+router.get("/", EventController.getAllEvents)
+router.get("/:id", EventController.getEventById)
+router.post("/", EventController.createEvent)
+router.put("/:id", EventController.updateEvent)
+router.delete("/:id", EventController.deleteEvent)
+
+
+router.post(
+  "/:id/material",
+  upload.single("file"), 
+  EventController.uploadMaterialToEvent
+)
+
+export default router
