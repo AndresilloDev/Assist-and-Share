@@ -12,7 +12,7 @@ import Link from "next/link"
 
 import LoadingSpinner from "@/app/components/(ui)/LoadingSpinner"
 import ErrorDisplay from "@/app/components/(ui)/ErrorDisplay"
-import CustomSelect from "@/app/components/(ui)/CustomSelect" // Asegúrate de importar tu componente
+import CustomSelect from "@/app/components/(ui)/CustomSelect"
 
 // --- Interfaces ---
 
@@ -54,6 +54,18 @@ const MODALITY_OPTIONS = [
     { value: "hybrid", label: "Híbrido" },
 ]
 
+// Función auxiliar para obtener fecha mínima
+function getMinDateTime(): string {
+    const now = new Date()
+
+    const year = now.getFullYear()
+    const month = String(now.getMonth() + 1).padStart(2, '0')
+    const day = String(now.getDate()).padStart(2, '0')
+    const hours = String(now.getHours()).padStart(2, '0')
+    const minutes = String(now.getMinutes()).padStart(2, '0')
+    return `${year}-${month}-${day}T${hours}:${minutes}`
+}
+
 export default function EditEventPage() {
     const params = useParams()
     const eventId = params.id as string
@@ -64,7 +76,9 @@ export default function EditEventPage() {
     const [isLoading, setIsLoading] = useState(true)
     const [isSaving, setIsSaving] = useState(false)
     const [error, setError] = useState("")
+    const [dateError, setDateError] = useState("")
     const [presenters, setPresenters] = useState<Presenter[]>([])
+    const [minDateTime] = useState(getMinDateTime())
 
     const [formData, setFormData] = useState<EventFormData>({
         title: "",
@@ -137,6 +151,21 @@ export default function EditEventPage() {
 
     const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = event.target
+
+        // Validación especial para el campo de fecha
+        if (name === 'date') {
+            const selectedDate = new Date(value)
+            const currentDate = new Date()
+
+            // Si la fecha seleccionada es anterior a la actual
+            if (selectedDate < currentDate) {
+                setDateError("No puedes seleccionar fechas pasadas. Por favor, elige una fecha futura.")
+                return
+            } else {
+                setDateError("") // Limpiar error si la fecha es válida
+            }
+        }
+
         setFormData(prev => ({ ...prev, [name]: value }))
     }
 
@@ -294,9 +323,15 @@ export default function EditEventPage() {
                                     name="date"
                                     value={formData.date}
                                     onChange={handleChange}
+                                    min={minDateTime}
                                     className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:outline-none [color-scheme:dark]"
                                     required
                                 />
+                                {dateError && (
+                                    <div className="mt-2 flex items-start gap-2 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
+                                        <div className="text-red-400 text-xs leading-relaxed">{dateError}</div>
+                                    </div>
+                                )}
                             </div>
                             <div>
                                 <label className="block text-sm text-gray-400 mb-1">Duración (minutos)</label>
@@ -449,7 +484,7 @@ export default function EditEventPage() {
                             Eliminar
                         </button>
                         <button
-                            onClick={handleSave}
+                            type="submit"
                             disabled={isSaving}
                             className="flex-1 md:flex-none px-6 py-2 bg-white text-black font-semibold rounded-lg hover:rounded-3xl duration-300 hover:cursor-pointer hover:bg-gray-200 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                         >

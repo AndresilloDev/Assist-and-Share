@@ -18,3 +18,24 @@ body {
   color: var(--foreground);
   font-family: 'Roboto Flex', Helvetica, sans-serif;
 }
+
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+  background-color: transparent;
+}
+
+::-webkit-scrollbar-track {
+  background: #1B293A;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2563EB;
+  border-radius: 10px;
+  border: 1px solid #1B293A;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3B82F6;
+}

@@ -4,6 +4,7 @@ import { useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
 import { Computer, MapPin, User } from "lucide-react"
+import QuizButton from "@/app/components/(ui)/QuizButton";
 
 // --- Definición de Interfaces ---
 
@@ -29,6 +30,8 @@ interface EventCardProps {
   presenterName: string
   onCancel?: () => void
   showCancelButton?: boolean
+  showQuizButton?: boolean
+  onQuizClick?: (eventId: string) => void
 }
 
 // --- Constantes ---
@@ -47,7 +50,14 @@ const EVENT_TYPE_COLORS: Record<string, string> = {
 
 // --- Componente Principal ---
 
-export default function EventCard({ event, presenterName, onCancel, showCancelButton }: EventCardProps) {
+export default function EventCard({
+                                    event,
+                                    presenterName,
+                                    onCancel,
+                                    showCancelButton,
+                                    showQuizButton = false,
+                                    onQuizClick
+                                  }: EventCardProps) {
   const { user } = useAuth()
   const router = useRouter()
 
@@ -153,13 +163,20 @@ export default function EventCard({ event, presenterName, onCancel, showCancelBu
         </div>
 
         {/* Botones */}
-        <div className="relative z-10 mt-6 flex gap-3">
+        <div className="relative z-10 mt-6 flex flex-col sm:flex-row gap-3">
           <button
               className="flex-grow py-3 bg-white text-black rounded-xl font-medium hover:bg-gray-200 transition-all duration-300 hover:shadow-lg hover:shadow-white/20 hover:rounded-3xl cursor-pointer"
               onClick={handleNavigate}
           >
             {buttonText}
           </button>
+
+          {showQuizButton && onQuizClick && (
+              <QuizButton
+                  eventId={event._id}
+                  onQuizClick={onQuizClick}
+              />
+          )}
 
           {showCancelButton && onCancel && (
               <button
