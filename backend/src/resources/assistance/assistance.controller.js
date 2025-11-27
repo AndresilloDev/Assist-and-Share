@@ -53,7 +53,7 @@ export const AssistanceController = {
 
         try {
             const checkin = await AssistanceService.checkIn(assistanceId);
-            
+
             // Redirigir a una página de éxito del front
             return res.redirect(`${process.env.FRONTEND_URL}/checkin-success`);
         } catch (error) {
@@ -80,10 +80,12 @@ export const AssistanceController = {
     },
 
     getByUser: async (req, res) => {
+        console.log("received petition on controller")
         const userId = req.params.userId;
-        
+
         try {
             const assistances = await AssistanceService.getByUser(userId);
+            console.log("assistances", assistances)
             return ApiResponse.success(res, {
                 message: "Asistencias obtenidas correctamente",
                 value: assistances,

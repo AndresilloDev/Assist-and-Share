@@ -2,9 +2,9 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { AlertCircle, Ban } from "lucide-react"
+import { AlertCircle, Ban, CheckCircle } from "lucide-react" // Agregué CheckCircle para el icono de éxito
 import type { User } from "@/hooks/useAuth"
-import QRModal from "@/app/components/(ui)/QRModal" // Asegúrate de que la ruta sea correcta
+import QRModal from "@/app/components/(ui)/QRModal"
 
 interface EventActionsProps {
   user: User | null
@@ -13,8 +13,8 @@ interface EventActionsProps {
   isAttendee: boolean
   changed: boolean
   eventId: string
-  eventTitle: string // Nuevo: Para el título del Modal
-  assistanceId?: string // Nuevo: Para generar el link del QR
+  eventTitle: string
+  assistanceId?: string
   onSaveChanges: () => void
   onEnroll: () => void
   isEnrolled: boolean
@@ -23,6 +23,7 @@ interface EventActionsProps {
   isApproved: boolean
   isRejected: boolean
   isPastEvent: boolean
+  isAttended: boolean // <--- NUEVA PROP
 }
 
 export default function EventActions({
@@ -42,9 +43,9 @@ export default function EventActions({
   isApproved,
   isRejected,
   isPastEvent,
+  isAttended, // <--- RECIBIR PROP
 }: EventActionsProps) {
   const router = useRouter()
-  // Estado local para manejar el Modal dentro de este componente
   const [isQRModalOpen, setIsQRModalOpen] = useState(false)
 
   if (!user) return null
@@ -76,8 +77,8 @@ export default function EventActions({
             disabled={!changed}
             onClick={onSaveChanges}
             className={`flex-1 py-3 rounded-xl font-semibold transition-all duration-300 ${changed
-                ? "bg-white text-black hover:bg-gray-200 hover:shadow-lg hover:shadow-white/20 hover:rounded-3xl duration-300 cursor-pointer"
-                : "bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700"
+              ? "bg-white text-black hover:bg-gray-200 hover:shadow-lg hover:shadow-white/20 hover:rounded-3xl duration-300 cursor-pointer"
+              : "bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700"
               }`}
           >
             Guardar cambios
@@ -93,12 +94,35 @@ export default function EventActions({
       )}
 
       {/* --- ATTENDEE ACTIONS --- */}
-      {isAttendee && !isPastEvent && (
+      {isAttendee && (
         <div className="flex flex-col gap-3">
-          {/* ESTADO: NO INSCRITO (Nuevo o Rechazado) */}
-          {!isEnrolled && (
+
+          {/* ESTADO: ASISTIÓ (NUEVO BLOQUE PRIORITARIO) */}
+          {isAttended && (
             <>
-              {/* 1. Label de Rechazado */}
+              <div className="flex flex-col">
+                <p className="text-green-400 text-sm font-medium my-2 flex items-center gap-2">
+                  <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                  Ya asististe a este evento.
+                </p>
+                <button
+                  // Ajusta la ruta a donde tengas tu página de feedback
+                  onClick={() => router.push(`/feedback/${eventId}`)}
+                  className="flex-1 py-3 bg-white hover:bg-white/90 text-black rounded-xl font-semibold transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 hover:rounded-3xl"
+                >
+                  Enviar retroalimentación
+                </button>
+              </div>
+
+
+            </>
+          )}
+
+          {/* ESTADO: NO INSCRITO (Nuevo o Rechazado) Y NO ASISTIÓ */}
+          {/* Solo mostramos el botón de Inscribirse si NO está inscrito Y NO ha asistido */}
+          {!isEnrolled && !isAttended && !isPastEvent && (
+            <>
+              {/* Label de Rechazado */}
               {isRejected && (
                 <div className="flex items-center gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm font-medium animate-in fade-in slide-in-from-bottom-2">
                   <AlertCircle size={18} />
@@ -106,14 +130,14 @@ export default function EventActions({
                 </div>
               )}
 
-              {/* 2. Botón Inscribirse (Normal o Bloqueado) */}
+              {/* Botón Inscribirse */}
               <button
                 onClick={onEnroll}
                 disabled={isRejected}
                 className={`flex-1 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center gap-2
                   ${isRejected
-                    ? "bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700 opacity-70" // Estilo Bloqueado
-                    : "bg-white hover:bg-white/90 text-black rounded-xl font-semibold transition-all duration-300 cursor-pointer" // Estilo Normal
+                    ? "bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700 opacity-70"
+                    : "bg-white hover:bg-white/90 text-black rounded-xl font-semibold transition-all duration-300 cursor-pointer"
                   }`}
               >
                 {isRejected && <Ban size={18} />}
@@ -123,7 +147,7 @@ export default function EventActions({
           )}
 
           {/* ESTADO: PENDIENTE */}
-          {isPending && (
+          {isPending && !isPastEvent && (
             <div className="flex flex-col">
               <p className="text-yellow-400 text-sm font-medium my-2 flex items-center gap-2">
                 <span className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse" />
@@ -139,7 +163,7 @@ export default function EventActions({
           )}
 
           {/* ESTADO: APROBADO */}
-          {isApproved && (
+          {isApproved && !isPastEvent && (
             <>
               <div className="flex gap-4">
                 <button
@@ -156,7 +180,6 @@ export default function EventActions({
                 </button>
               </div>
 
-              {/* MODAL INTEGRADO AQUÍ */}
               {assistanceId && (
                 <QRModal
                   isOpen={isQRModalOpen}

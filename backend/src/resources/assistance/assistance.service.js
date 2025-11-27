@@ -112,6 +112,7 @@ export const AssistanceService = {
 
     getByEvent: async (eventId) => {
         try {
+            console.log("received petition")
             const assistances = await Assistance.find({ event: eventId }).populate("user");
             return assistances;
         } catch (error) {
