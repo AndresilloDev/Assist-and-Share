@@ -6,7 +6,8 @@ import { useAuth } from "@/hooks/useAuth"
 import api from "@/lib/api"
 import {
     ArrowLeft, Save, Trash2, UploadCloud,
-    X, Plus, FileText, Calendar, MapPin, Link as LinkIcon
+    X, Plus, FileText, Calendar, MapPin, Link as LinkIcon,
+    MessageSquare, GripVertical
 } from "lucide-react"
 import Link from "next/link"
 
@@ -40,6 +41,20 @@ interface EventFormData {
 interface MockMaterial {
     name: string
     size: string
+}
+
+interface Question {
+    _id?: string
+    text: string
+    order: number
+}
+
+interface SurveyData {
+    _id?: string
+    title: string
+    description: string
+    isActive: boolean
+    questions: Question[]
 }
 
 // --- Opciones Estáticas ---
@@ -102,6 +117,16 @@ export default function EditEventPage() {
     const [newReq, setNewReq] = useState("")
     const [materials, setMaterials] = useState<MockMaterial[]>([])
 
+    // Estados para la encuesta
+    const [surveyData, setSurveyData] = useState<SurveyData>({
+        title: "Encuesta de retroalimentación",
+        description: "",
+        isActive: true,
+        questions: []
+    })
+    const [newQuestionText, setNewQuestionText] = useState("")
+    const [hasSurvey, setHasSurvey] = useState(false)
+
     // --- Carga Inicial ---
     useEffect(() => {
         const initData = async () => {
@@ -113,8 +138,6 @@ export default function EditEventPage() {
                 const event = eventReq.data.value
 
                 const dateObj = new Date(event.date)
-                // Ajuste de zona horaria local para input datetime-local
-                // Esto evita el desfase de horas al editar
                 const offset = dateObj.getTimezoneOffset()
                 const localDate = new Date(dateObj.getTime() - (offset * 60 * 1000))
                 const formattedDate = localDate.toISOString().slice(0, 16)
@@ -132,6 +155,26 @@ export default function EditEventPage() {
                     requirements: event.requirements || [],
                     type: event.type
                 })
+
+                // Cargar encuesta si existe
+                try {
+                    const surveyReq = await api.get(`/surveys/${eventId}`)
+                    const survey = surveyReq.data.value
+
+                    if (survey) {
+                        setHasSurvey(true)
+                        setSurveyData({
+                            _id: survey._id,
+                            title: survey.title || "Encuesta de retroalimentación",
+                            description: survey.description || "",
+                            isActive: survey.isActive !== undefined ? survey.isActive : true,
+                            questions: survey.questions || []
+                        })
+                    }
+                } catch (surveyErr: any) {
+                    // Si no existe encuesta, no pasa nada
+                    console.log("No hay encuesta para este evento")
+                }
 
             } catch (err: any) {
                 console.error(err)
@@ -152,29 +195,26 @@ export default function EditEventPage() {
         }))
     }, [presenters])
 
-    // --- Manejadores ---
+    // --- Manejadores del Evento ---
 
     const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = event.target
 
-        // Validación especial para el campo de fecha
         if (name === 'date') {
             const selectedDate = new Date(value)
             const currentDate = new Date()
 
-            // Si la fecha seleccionada es anterior a la actual
             if (selectedDate < currentDate) {
                 setDateError("No puedes seleccionar fechas pasadas. Por favor, elige una fecha futura.")
                 return
             } else {
-                setDateError("") // Limpiar error si la fecha es válida
+                setDateError("")
             }
         }
 
         setFormData(prev => ({ ...prev, [name]: value }))
     }
 
-    // Manejador específico para CustomSelect
     const handleSelectChange = (field: keyof EventFormData, value: string) => {
         setFormData(prev => ({ ...prev, [field]: value }))
     }
@@ -206,16 +246,93 @@ export default function EditEventPage() {
         setMaterials(prev => prev.filter((_, i) => i !== index))
     }
 
+    // --- Manejadores de la Encuesta ---
+
+    const handleSurveyChange = (field: keyof SurveyData, value: any) => {
+        setSurveyData(prev => ({ ...prev, [field]: value }))
+    }
+
+    const handleAddQuestion = () => {
+        if (newQuestionText.trim() === "") return
+
+        const newQuestion: Question = {
+            text: newQuestionText.trim(),
+            order: surveyData.questions.length
+        }
+
+        setSurveyData(prev => ({
+            ...prev,
+            questions: [...prev.questions, newQuestion]
+        }))
+        setNewQuestionText("")
+    }
+
+    const handleRemoveQuestion = (index: number) => {
+        setSurveyData(prev => ({
+            ...prev,
+            questions: prev.questions.filter((_, i) => i !== index).map((q, i) => ({
+                ...q,
+                order: i
+            }))
+        }))
+    }
+
+    const handleQuestionTextChange = (index: number, text: string) => {
+        setSurveyData(prev => ({
+            ...prev,
+            questions: prev.questions.map((q, i) =>
+                i === index ? { ...q, text } : q
+            )
+        }))
+    }
+
+    const moveQuestion = (index: number, direction: 'up' | 'down') => {
+        const newQuestions = [...surveyData.questions]
+        const targetIndex = direction === 'up' ? index - 1 : index + 1
+
+        if (targetIndex < 0 || targetIndex >= newQuestions.length) return
+
+        [newQuestions[index], newQuestions[targetIndex]] = [newQuestions[targetIndex], newQuestions[index]]
+
+        setSurveyData(prev => ({
+            ...prev,
+            questions: newQuestions.map((q, i) => ({ ...q, order: i }))
+        }))
+    }
+
+    // --- Guardar Evento y Encuesta ---
+
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault()
         setIsSaving(true)
         setError("")
 
         try {
+            // Actualizar evento
             await api.put(`/events/${eventId}`, {
                 ...formData,
                 date: new Date(formData.date).toISOString()
             })
+
+            // Actualizar o crear encuesta si tiene preguntas
+            if (surveyData.questions.length > 0) {
+                const surveyPayload = {
+                    event: eventId,
+                    title: surveyData.title,
+                    description: surveyData.description,
+                    isActive: surveyData.isActive,
+                    questions: surveyData.questions
+                }
+
+                if (hasSurvey && surveyData._id) {
+                    // Actualizar encuesta existente
+                    await api.patch(`/surveys/${surveyData._id}`, surveyPayload)
+                } else {
+                    // Crear nueva encuesta
+                    await api.post('/surveys', surveyPayload)
+                }
+            }
+
             router.push(`/event-details/${eventId}`)
         } catch (err: any) {
             console.error(err)
@@ -289,7 +406,6 @@ export default function EditEventPage() {
                                 />
                             </div>
 
-                            {/* Custom Select: Tipo de Evento */}
                             <div className="relative z-20">
                                 <label className="block text-sm text-gray-400 mb-1">Tipo de Evento</label>
                                 <CustomSelect
@@ -300,7 +416,6 @@ export default function EditEventPage() {
                                 />
                             </div>
 
-                            {/* Custom Select: Presentador */}
                             <div className="relative z-20">
                                 <label className="block text-sm text-gray-400 mb-1">Presentador</label>
                                 <CustomSelect
@@ -360,7 +475,6 @@ export default function EditEventPage() {
                                 />
                             </div>
 
-                            {/* Custom Select: Modalidad */}
                             <div className="relative z-10">
                                 <label className="block text-sm text-gray-400 mb-1">Modalidad</label>
                                 <CustomSelect
@@ -370,7 +484,6 @@ export default function EditEventPage() {
                                 />
                             </div>
 
-                            {/* Capacidad (Siempre editable) */}
                             <div>
                                 <label className="block text-sm text-gray-400 mb-1">Capacidad Máxima</label>
                                 <input
@@ -383,7 +496,6 @@ export default function EditEventPage() {
                                 />
                             </div>
 
-                            {/* Campos condicionales */}
                             {(formData.modality === 'in-person' || formData.modality === 'hybrid') && (
                                 <div className="col-span-2">
                                     <label className="block text-sm text-gray-400 mb-1 flex items-center gap-1"><MapPin size={14} /> Ubicación Física</label>
@@ -452,7 +564,7 @@ export default function EditEventPage() {
                         </div>
                     </div>
 
-                    {/* Sección 4: Materiales (Simulado) */}
+                    {/* Sección 4: Materiales */}
                     <div className="bg-[#0B1121] border border-gray-800 rounded-2xl p-6">
                         <div className="flex justify-between items-center mb-6">
                             <h2 className="text-xl font-semibold text-white">Materiales y Recursos</h2>
@@ -488,7 +600,145 @@ export default function EditEventPage() {
                         <p className="text-xs text-gray-600 mt-4">* La subida de archivos es una simulación visual.</p>
                     </div>
 
+                    {/* Sección 5: Encuesta de Retroalimentación */}
+                    <div className="bg-[#0B1121] border border-gray-800 rounded-2xl p-6">
+                        <div className="flex items-center gap-2 mb-6">
+                            <MessageSquare className="text-blue-400" size={24} />
+                            <h2 className="text-xl font-semibold text-white">Encuesta de Retroalimentación</h2>
+                        </div>
 
+                        <div className="space-y-6">
+                            {/* Título y descripción de la encuesta */}
+                            <div>
+                                <label className="block text-sm text-gray-400 mb-1">Título de la Encuesta</label>
+                                <input
+                                    type="text"
+                                    value={surveyData.title}
+                                    onChange={(e) => handleSurveyChange('title', e.target.value)}
+                                    className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:outline-none"
+                                    placeholder="Ej. Encuesta de retroalimentación"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm text-gray-400 mb-1">Descripción (opcional)</label>
+                                <textarea
+                                    value={surveyData.description}
+                                    onChange={(e) => handleSurveyChange('description', e.target.value)}
+                                    rows={2}
+                                    className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:outline-none resize-none"
+                                    placeholder="Breve descripción de la encuesta..."
+                                />
+                            </div>
+
+                            {/* Estado activo */}
+                            <div className="flex items-center gap-3">
+                                <input
+                                    type="checkbox"
+                                    id="isActive"
+                                    checked={surveyData.isActive}
+                                    onChange={(e) => handleSurveyChange('isActive', e.target.checked)}
+                                    className="w-4 h-4 rounded border-gray-700 bg-gray-900 text-blue-600 focus:ring-blue-500"
+                                />
+                                <label htmlFor="isActive" className="text-sm text-gray-300">
+                                    Encuesta activa (los participantes podrán responderla)
+                                </label>
+                            </div>
+
+                            {/* Agregar pregunta */}
+                            <div>
+                                <label className="block text-sm text-gray-400 mb-2">Preguntas de la Encuesta</label>
+                                <div className="flex gap-2 mb-4">
+                                    <input
+                                        type="text"
+                                        value={newQuestionText}
+                                        onChange={(e) => setNewQuestionText(e.target.value)}
+                                        onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddQuestion())}
+                                        placeholder="Escribe una pregunta para la encuesta..."
+                                        className="flex-1 bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:border-blue-500 focus:outline-none"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={handleAddQuestion}
+                                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+                                    >
+                                        <Plus size={20} />
+                                        <span className="hidden sm:inline">Agregar</span>
+                                    </button>
+                                </div>
+
+                                {/* Lista de preguntas */}
+                                <div className="space-y-2">
+                                    {surveyData.questions.length === 0 && (
+                                        <p className="text-gray-500 text-sm italic text-center py-4 bg-gray-900/50 rounded-lg border border-gray-800">
+                                            No hay preguntas agregadas. Agrega al menos una pregunta para crear la encuesta.
+                                        </p>
+                                    )}
+                                    {surveyData.questions.map((question, idx) => (
+                                        <div
+                                            key={idx}
+                                            className="flex items-center gap-2 bg-gray-900 px-4 py-3 rounded-lg border border-gray-800 group"
+                                        >
+                                            {/* Botones de orden */}
+                                            <div className="flex flex-col gap-1 opacity-50 group-hover:opacity-100 transition-opacity">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => moveQuestion(idx, 'up')}
+                                                    disabled={idx === 0}
+                                                    className="text-gray-500 hover:text-blue-400 disabled:opacity-30 disabled:cursor-not-allowed"
+                                                >
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                                    </svg>
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => moveQuestion(idx, 'down')}
+                                                    disabled={idx === surveyData.questions.length - 1}
+                                                    className="text-gray-500 hover:text-blue-400 disabled:opacity-30 disabled:cursor-not-allowed"
+                                                >
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+
+                                            {/* Número de pregunta */}
+                                            <span className="text-gray-500 font-medium min-w-[2rem]">
+                                                {idx + 1}.
+                                            </span>
+
+                                            {/* Input de texto de la pregunta */}
+                                            <input
+                                                type="text"
+                                                value={question.text}
+                                                onChange={(e) => handleQuestionTextChange(idx, e.target.value)}
+                                                className="flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white text-sm focus:border-blue-500 focus:outline-none"
+                                                placeholder="Texto de la pregunta..."
+                                            />
+
+                                            {/* Botón eliminar */}
+                                            <button
+                                                type="button"
+                                                onClick={() => handleRemoveQuestion(idx)}
+                                                className="text-gray-500 hover:text-red-400 p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                            >
+                                                <X size={18} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {surveyData.questions.length > 0 && (
+                                    <p className="text-xs text-gray-500 mt-3">
+                                        Usa las flechas para reordenar las preguntas. Los participantes las verán en este orden.
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Botones de acción */}
                     <div className="flex gap-3 w-full md:w-auto justify-end">
                         <button
                             type="button"
@@ -503,7 +753,7 @@ export default function EditEventPage() {
                             disabled={isSaving}
                             className="flex-1 md:flex-none px-6 py-2 bg-white text-black font-semibold rounded-lg hover:rounded-3xl duration-300 hover:cursor-pointer hover:bg-gray-200 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                         >
-                            Guardar Cambios
+                            {isSaving ? "Guardando..." : "Guardar Cambios"}
                         </button>
                     </div>
 

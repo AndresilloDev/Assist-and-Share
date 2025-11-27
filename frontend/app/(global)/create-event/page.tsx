@@ -5,17 +5,15 @@ import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
 import api from "@/lib/api"
 import {
-    ArrowLeft, Save, UploadCloud,
-    X, Plus, FileText, Calendar, MapPin, Link as LinkIcon,
+    UploadCloud,
+    X, Plus, FileText, MapPin, Link as LinkIcon,
     Trash2
 } from "lucide-react"
-import Link from "next/link"
-
 import LoadingSpinner from "@/app/components/(ui)/LoadingSpinner"
 import ErrorDisplay from "@/app/components/(ui)/ErrorDisplay"
 import CustomSelect from "@/app/components/(ui)/CustomSelect"
 
-// --- Interfaces ---
+// --- Interfaces y Datos Estáticos (sin cambios) ---
 
 interface Presenter {
     _id: string
@@ -40,9 +38,17 @@ interface EventFormData {
 interface MockMaterial {
     name: string
     size: string
+    url?: string
 }
 
-// --- Opciones Estáticas ---
+const GENERIC_QUESTIONS_DATA = [
+    { text: "¿Qué tan satisfecho estás con el contenido presentado?", order: 1 },
+    { text: "¿Cómo calificarías la calidad de la presentación?", order: 2 },
+    { text: "¿El presentador demostró dominio del tema?", order: 3 },
+    { text: "¿Las instalaciones y logística fueron adecuadas?", order: 4 },
+    { text: "¿Recomendarías este evento a otras personas?", order: 5 },
+]
+
 const EVENT_TYPE_OPTIONS = [
     { value: "conference", label: "Conferencia" },
     { value: "workshop", label: "Taller" },
@@ -55,12 +61,8 @@ const MODALITY_OPTIONS = [
     { value: "hybrid", label: "Híbrido" },
 ]
 
-// Función auxiliar para obtener fecha mínima (fuera del componente)
 function getMinDateTime(): string {
     const now = new Date()
-    // Agregar 1 hora a la fecha actual
-    now.setHours(now.getHours() + 1)
-
     const year = now.getFullYear()
     const month = String(now.getMonth() + 1).padStart(2, '0')
     const day = String(now.getDate()).padStart(2, '0')
@@ -69,15 +71,17 @@ function getMinDateTime(): string {
     return `${year}-${month}-${day}T${hours}:${minutes}`
 }
 
+// --- Componente Principal ---
+
 export default function CreateEventPage() {
     const router = useRouter()
     const { user } = useAuth()
 
-    // --- Estados ---
     const [isLoading, setIsLoading] = useState(true)
     const [isSaving, setIsSaving] = useState(false)
     const [error, setError] = useState("")
     const [dateError, setDateError] = useState("")
+    const [quizError, setQuizError] = useState("")
     const [presenters, setPresenters] = useState<Presenter[]>([])
     const [minDateTime] = useState(getMinDateTime())
 
@@ -98,12 +102,21 @@ export default function CreateEventPage() {
     const [newReq, setNewReq] = useState("")
     const [materials, setMaterials] = useState<MockMaterial[]>([])
 
-    // --- Carga Inicial (Solo Presentadores) ---
+    const [useGenericQuiz, setUseGenericQuiz] = useState(true)
+    const [dynamicQuestions, setDynamicQuestions] = useState<
+        { text: string; order: number; tempId: number }[]
+    >([])
+    const [nextTempId, setNextTempId] = useState(1)
+
+
     useEffect(() => {
         const fetchPresenters = async () => {
             try {
                 const presentersReq = await api.get("/users", { params: { role: "presenter" } })
                 setPresenters(presentersReq.data.value.results)
+                if (presentersReq.data.value.results.length > 0) {
+                    setFormData(prev => ({ ...prev, presenter: prev.presenter || presentersReq.data.value.results[0]._id }))
+                }
             } catch (err: any) {
                 console.error(err)
                 setError("Error al cargar la lista de presentadores.")
@@ -115,7 +128,7 @@ export default function CreateEventPage() {
         if (user) fetchPresenters()
     }, [user])
 
-    // --- Mapeo de Opciones ---
+
     const presenterOptions = useMemo(() => {
         return presenters.map(p => ({
             value: p._id,
@@ -123,24 +136,74 @@ export default function CreateEventPage() {
         }))
     }, [presenters])
 
-    // --- Manejadores ---
+    // --- MANEJADORES PARA PREGUNTAS DINÁMICAS ---
+    const handleAddQuestion = () => {
+        if (!useGenericQuiz && dynamicQuestions.length > 0 && dynamicQuestions[dynamicQuestions.length - 1].text.trim() === "") {
+            setQuizError("La pregunta anterior no puede estar vacía.");
+            return;
+        }
+        setQuizError("");
+
+        setDynamicQuestions(prev => [
+            ...prev,
+            { text: "", order: prev.length + 1, tempId: nextTempId }
+        ]);
+        setNextTempId(prev => prev + 1);
+    }
+
+    const handleUpdateQuestion = (tempId: number, newText: string) => {
+        setDynamicQuestions(prev =>
+            prev.map(q =>
+                q.tempId === tempId
+                    ? { ...q, text: newText }
+                    : q
+            )
+        );
+        if (newText.trim() !== "") {
+            setQuizError("");
+        }
+    }
+
+    const handleRemoveQuestion = (tempId: number) => {
+        setQuizError("");
+        setDynamicQuestions(prev =>
+            prev
+                .filter(q => q.tempId !== tempId)
+                .map((q, index) => ({
+                    ...q,
+                    order: index + 1
+                }))
+        );
+    }
+
+    const validateQuiz = () => {
+        if (!useGenericQuiz) {
+            if (dynamicQuestions.length === 0) {
+                setQuizError("Para una Encuesta Personalizada, debes añadir al menos una pregunta.");
+                return false;
+            }
+            if (dynamicQuestions.some(q => q.text.trim() === "")) {
+                setQuizError("Todas las preguntas de la Encuesta Personalizada deben tener texto válido.");
+                return false;
+            }
+        }
+        setQuizError("");
+        return true;
+    }
+    // --- FIN MANEJADORES PARA PREGUNTAS DINÁMICAS ---
+
 
     const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target
 
-        // Validación especial para el campo de fecha
         if (name === 'date') {
             const selectedDate = new Date(value)
             const currentDate = new Date()
-            // Agregar 1 hora a la fecha actual para la validación
-            const minimumDate = new Date(currentDate.getTime() + 60 * 60 * 1000)
 
-            // Si la fecha seleccionada es anterior a la fecha mínima (ahora + 1 hora)
-            if (selectedDate < minimumDate) {
-                setDateError("No puedes seleccionar fechas pasadas. El evento debe programarse al menos 1 hora después de la hora actual.")
-                return
+            if (selectedDate < currentDate) {
+                setDateError("No puedes seleccionar fechas pasadas. El evento debe programarse después de la hora actual.")
             } else {
-                setDateError("") // Limpiar error si la fecha es válida
+                setDateError("")
             }
         }
 
@@ -168,41 +231,38 @@ export default function CreateEventPage() {
     }
 
     const handleFileUpload = async (e: ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0) return
+        if (!e.target.files || e.target.files.length === 0) return
 
-    const file = e.target.files[0]
-    const formDataToSend = new FormData()
-    formDataToSend.append("file", file)
+        const file = e.target.files[0]
+        const formDataToSend = new FormData()
+        formDataToSend.append("file", file)
 
-    setError("")
-    setIsSaving(true) // opcional: puedes usar otro estado como isUploading
+        setError("")
+        setIsSaving(true)
 
-    try {
-        // Llamada al backend: /uploads/material
-        const uploadRes = await api.post("/uploads/material", formDataToSend, {
-            headers: { "Content-Type": "multipart/form-data" }
-        })
+        try {
+            const uploadRes = await api.post("/uploads/material", formDataToSend, {
+                headers: { "Content-Type": "multipart/form-data" }
+            })
 
-        const secureUrl = uploadRes.data.secure_url
+            const secureUrl = uploadRes.data.secure_url
 
-        // Agregar el archivo subido a la lista visual
-        setMaterials(prev => [
-            ...prev,
-            {
-                name: file.name,
-                size: `${(file.size / 1024).toFixed(1)} KB`,
-                url: secureUrl
-            }
-        ])
+            setMaterials(prev => [
+                ...prev,
+                {
+                    name: file.name,
+                    size: `${(file.size / 1024).toFixed(1)} KB`,
+                    url: secureUrl
+                }
+            ])
 
-    } catch (err: any) {
-        console.error(err)
-        setError("Error al subir el archivo. Inténtalo nuevamente.")
-    } finally {
-        setIsSaving(false)
+        } catch (err: any) {
+            console.error(err)
+            setError("Error al subir el archivo. Inténtalo nuevamente.")
+        } finally {
+            setIsSaving(false)
+        }
     }
-}
-
 
     const handleRemoveMaterial = (index: number) => {
         setMaterials(prev => prev.filter((_, i) => i !== index))
@@ -213,22 +273,56 @@ export default function CreateEventPage() {
         e.preventDefault()
         setIsSaving(true)
         setError("")
+        setQuizError("")
+
+        if (!validateQuiz()) {
+            setIsSaving(false);
+            return;
+        }
 
         try {
-            // Crear el evento
-            const response = await api.post('/events', {
+            // A. Crear el evento
+            const eventData = {
                 ...formData,
                 date: new Date(formData.date).toISOString()
+            }
+
+            const eventResponse = await api.post('/events', eventData)
+            const newEventId = eventResponse.data.value._id
+
+            // B. Preparar datos para crear la Encuesta/Survey asociada
+            let surveyQuestionsToCreate;
+            let surveyTitle = "Encuesta de Retroalimentación";
+            let surveyDescription = "";
+
+            if (useGenericQuiz) {
+                surveyQuestionsToCreate = GENERIC_QUESTIONS_DATA.map(q => ({
+                    text: q.text,
+                    order: q.order
+                }))
+                surveyTitle = "Encuesta de Retroalimentación Estándar";
+                surveyDescription = "Preguntas predefinidas para evaluar la calidad general del evento.";
+            } else {
+                surveyQuestionsToCreate = dynamicQuestions.map(q => ({
+                    text: q.text,
+                    order: q.order
+                }))
+                surveyTitle = "Encuesta Personalizada";
+            }
+
+            // C. Llamada al backend de Surveys para crear la encuesta
+            await api.post('/surveys', {
+                event: newEventId,
+                title: surveyTitle,
+                description: surveyDescription,
+                questions: surveyQuestionsToCreate
             })
 
-            // Obtener el ID del nuevo evento para redirigir
-            const newEventId = response.data.value._id
-
-            // Redirigir al detalle del evento creado
+            // D. Redirigir
             router.push(`/event-details/${newEventId}`)
         } catch (err: any) {
             console.error(err)
-            setError(err.response?.data?.message || "Error al crear el evento")
+            setError(err.response?.data?.message || "Error al crear el evento o la encuesta asociada.")
             setIsSaving(false)
         }
     }
@@ -239,7 +333,6 @@ export default function CreateEventPage() {
         <div className="min-h-screen text-white p-4 md:p-8" style={{ background: "linear-gradient(180deg, #1B293A 0%, #040711 10%)" }}>
             <div className="max-w-5xl mx-auto pb-20 md:pb-0">
 
-                {/* Header */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 border-b border-gray-800 pb-6">
                     <div>
                         <h1 className="text-3xl md:text-5xl font-bold mb-2">Crear Nuevo Evento</h1>
@@ -322,6 +415,7 @@ export default function CreateEventPage() {
                                 />
                                 {dateError && (
                                     <div className="mt-2 flex items-start gap-2 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
+                                        {/* ICONO DE X ELIMINADO AQUÍ */}
                                         <div className="text-red-400 text-xs leading-relaxed">{dateError}</div>
                                     </div>
                                 )}
@@ -428,7 +522,7 @@ export default function CreateEventPage() {
                         </div>
                     </div>
 
-                    {/* Sección 4: Materiales (Simulado) */}
+                    {/* Sección 4: Materiales */}
                     <div className="bg-[#0B1121] border border-gray-800 rounded-2xl p-6">
                         <div className="flex justify-between items-center mb-6">
                             <h2 className="text-xl font-semibold text-white">Materiales y Recursos</h2>
@@ -461,17 +555,134 @@ export default function CreateEventPage() {
                                 </div>
                             ))}
                         </div>
-                        <p className="text-xs text-gray-600 mt-4">* La subida de archivos es una simulación visual.</p>
                     </div>
+
+                    {/* --- SECCIÓN 5: Opciones de Encuesta / Quiz Dinámico --- */}
+                    <div className="bg-[#0B1121] border border-gray-800 rounded-2xl p-6">
+                        <h2 className="text-xl font-semibold mb-6 flex items-center gap-2 text-white">
+                            <FileText className="w-5 h-5" /> Opciones de Encuesta de Retroalimentación
+                        </h2>
+
+                        <div className="space-y-4">
+                            {/* Opción Quiz Genérico */}
+                            <div className={`p-4 rounded-lg cursor-pointer transition-all border ${useGenericQuiz ? 'bg-blue-900/40 border-blue-500' : 'bg-gray-900/50 border-gray-700 hover:bg-gray-800/50'}`}>
+                                <label htmlFor="generic-quiz" className="flex items-center space-x-3 cursor-pointer">
+                                    <input
+                                        id="generic-quiz"
+                                        type="checkbox"
+                                        checked={useGenericQuiz}
+                                        onChange={() => {
+                                            setUseGenericQuiz(true);
+                                            setDynamicQuestions([]);
+                                            setQuizError("");
+                                        }}
+                                        className="w-5 h-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 shrink-0"
+                                    />
+                                    <div className="flex flex-col">
+                                        <span className="text-white text-lg font-semibold">Usar Encuesta Genérica</span>
+                                        <span className="text-gray-400 text-sm">Se usarán las 5 preguntas estándar predefinidas por la plataforma.</span>
+                                    </div>
+                                </label>
+                            </div>
+
+                            {/* Opción Quiz Dinámico */}
+                            <div className={`p-4 rounded-lg transition-all border ${!useGenericQuiz ? 'bg-blue-900/40 border-blue-500' : 'bg-gray-900/50 border-gray-700 hover:bg-gray-800/50'}`}>
+                                <label htmlFor="dynamic-quiz" className="flex items-center space-x-3 cursor-pointer">
+                                    <input
+                                        id="dynamic-quiz"
+                                        type="checkbox"
+                                        checked={!useGenericQuiz}
+                                        onChange={() => {
+                                            setUseGenericQuiz(false);
+                                            setQuizError("");
+                                        }}
+                                        className="w-5 h-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 shrink-0"
+                                    />
+                                    <div className="flex flex-col">
+                                        <span className="text-white text-lg font-semibold">Crear Encuesta Personalizada</span>
+                                        <span className="text-gray-400 text-sm">Define tus propias preguntas para el evento (Mínimo 1).</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        {/* Formulario de Preguntas Dinámicas */}
+                        {!useGenericQuiz && (
+                            <div className="mt-6 p-5 bg-gray-950 rounded-lg border border-gray-700 space-y-4">
+                                <h3 className="text-lg font-semibold text-white border-b border-gray-700 pb-3">
+                                    Preguntas Personalizadas
+                                </h3>
+
+                                {dynamicQuestions.length === 0 && (
+                                    <p className="text-gray-400 italic text-sm">
+                                        Presiona "Agregar Pregunta" para empezar a definir tu encuesta.
+                                    </p>
+                                )}
+
+                                {dynamicQuestions.sort((a, b) => a.order - b.order).map((q, index) => (
+                                    <div key={q.tempId} className="flex items-start gap-3 bg-gray-800 p-3 rounded-lg border border-gray-700">
+                                        <span className="text-blue-400 font-bold mt-2 w-6 shrink-0 text-center">{index + 1}.</span>
+                                        <input
+                                            type="text"
+                                            value={q.text}
+                                            onChange={(e) => handleUpdateQuestion(q.tempId, e.target.value)}
+                                            onBlur={() => validateQuiz()}
+                                            placeholder="Escribe el texto de la pregunta (Ej: ¿El material de apoyo fue relevante?)"
+                                            className="flex-grow px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+                                            required
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => handleRemoveQuestion(q.tempId)}
+                                            className="p-2 mt-1 text-red-400 hover:text-red-500 hover:bg-gray-700 rounded-full transition-colors shrink-0"
+                                        >
+                                            <Trash2 size={20} />
+                                        </button>
+                                    </div>
+                                ))}
+
+                                <button
+                                    type="button"
+                                    onClick={handleAddQuestion}
+                                    className="cursor-pointer bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-600/30 px-4 py-2 rounded-lg flex items-center gap-2 transition-all text-sm font-medium disabled:opacity-50"
+                                    disabled={!useGenericQuiz && dynamicQuestions.some(q => q.text.trim() === "")}
+                                >
+                                    <Plus size={18} /> Agregar Pregunta
+                                </button>
+
+                                {quizError && (
+                                    <div className="mt-4 flex items-start gap-2 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
+                                        <X size={16} className="text-red-400 mt-0.5 shrink-0"/>
+                                        <div className="text-red-400 text-xs leading-relaxed">{quizError}</div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                    {/* Fin de Sección de Encuesta */}
+
 
                     {/* Footer Actions (Bottom) */}
                     <div className="flex justify-end pt-4">
                         <button
                             type="submit"
-                            disabled={isSaving}
+                            disabled={
+                                isSaving ||
+                                !!dateError ||
+                                !!quizError ||
+                                (!useGenericQuiz && dynamicQuestions.length === 0)
+                            }
                             className="w-full md:w-auto px-8 py-2.5 bg-white text-black font-semibold rounded-xl hover:bg-gray-200 hover:rounded-3xl duration-300 transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer shadow-lg shadow-white/10"
                         >
-                            {isSaving ? <LoadingSpinner size="sm" /> : "Crear Evento"}
+                            {isSaving ? (
+                                <>
+                                    <span
+                                        className="inline-block w-4 h-4 rounded-full border-2 border-black/30 border-t-black animate-spin"
+                                        aria-hidden="true"
+                                    />
+                                    <span>Creando Evento...</span>
+                                </>
+                            ) : "Crear Evento"}
                         </button>
                     </div>
 

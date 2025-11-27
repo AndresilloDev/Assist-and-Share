@@ -9,7 +9,6 @@ import EventFilterBar from "@/app/components/(global)/events/EventFilterBar"
 import EventCard from "@/app/components/(global)/events/EventCard"
 import LoadingSpinner from "@/app/components/(ui)/LoadingSpinner"
 import ErrorDisplay from "@/app/components/(ui)/ErrorDisplay"
-import ConfirmationModal from "@/app/components/(ui)/ConfirmationModal"
 
 // --- Definición de Interfaces ---
 
@@ -37,12 +36,6 @@ interface Presenter {
     email: string
 }
 
-interface Assistance {
-    _id: string
-    event: Event
-    status: string
-}
-
 // --- Componente Principal ---
 
 export default function EventsPage() {
@@ -50,7 +43,6 @@ export default function EventsPage() {
 
     // Estado de los datos
     const [events, setEvents] = useState<Event[]>([])
-    const [assistances, setAssistances] = useState<Assistance[]>([])
     const [presenters, setPresenters] = useState<Presenter[]>([])
 
     // Estado de la UI (carga y errores)
@@ -62,11 +54,6 @@ export default function EventsPage() {
     const [typeFilter, setTypeFilter] = useState<string>("all")
     const [dateFilter, setDateFilter] = useState<string>("upcoming")
     const [presenterFilter, setPresenterFilter] = useState<string>("all")
-
-    // Estado del modal de confirmación
-    const [showCancelModal, setShowCancelModal] = useState(false)
-    const [eventToCancel, setEventToCancel] = useState<{ eventId: string; assistanceId: string } | null>(null)
-    const [isCancelling, setIsCancelling] = useState(false)
 
     // --- Carga de Datos ---
 
@@ -109,9 +96,6 @@ export default function EventsPage() {
                 ["pending", "approved", "attended"].includes(a.status) && a.event
             )
 
-            // Guardar las asistencias para tener el ID
-            setAssistances(activeInscriptions)
-
             // 3. Extraer eventos y aplicar filtros locales
             let filteredEvents = activeInscriptions.map((a: any) => a.event)
 
@@ -149,46 +133,6 @@ export default function EventsPage() {
     useEffect(() => {
         fetchEvents()
     }, [user, typeFilter, dateFilter, presenterFilter])
-
-    // --- Funciones de Cancelación ---
-
-    const handleCancelClick = (eventId: string) => {
-        // Encontrar el assistance ID correspondiente
-        const assistance = assistances.find(a => a.event._id === eventId)
-        if (assistance) {
-            setEventToCancel({ eventId, assistanceId: assistance._id })
-            setShowCancelModal(true)
-        }
-    }
-
-    const handleConfirmCancel = async () => {
-        if (!eventToCancel) return
-
-        setIsCancelling(true)
-        try {
-            await api.delete(`/assistance/${eventToCancel.assistanceId}`)
-
-            // Cerrar modal
-            setShowCancelModal(false)
-            setEventToCancel(null)
-
-            // Recargar eventos
-            await fetchEvents()
-        } catch (err: any) {
-            const errMsg = err.response?.data?.message || "Error al cancelar inscripción"
-            setError(errMsg)
-            console.error("Error cancelling inscription:", err)
-        } finally {
-            setIsCancelling(false)
-        }
-    }
-
-    const handleCloseModal = () => {
-        if (!isCancelling) {
-            setShowCancelModal(false)
-            setEventToCancel(null)
-        }
-    }
 
     // --- Helpers ---
 
@@ -274,6 +218,7 @@ export default function EventsPage() {
                                 <div key={dateKey} className="relative flex flex-col md:flex-row">
 
                                     {/* --- VERSIÓN MÓVIL: Header de fecha --- */}
+                                    {/* Se muestra solo en pantallas pequeñas */}
                                     <div className="md:hidden pb-4 mb-2 border-b border-gray-800">
                                         <p className="text-xl font-bold text-white">
                                             {dayNum} de {month} <span className="text-gray-500 font-normal text-base capitalize">({weekday})</span>
@@ -281,6 +226,7 @@ export default function EventsPage() {
                                     </div>
 
                                     {/* --- VERSIÓN DESKTOP: Columna Izquierda - Fecha --- */}
+                                    {/* Se oculta en pantallas pequeñas */}
                                     <div className="hidden md:block flex-shrink-0 w-48 pr-8 pt-2">
                                         <div className="text-left">
                                             <p className="text-xl font-semibold">
@@ -293,6 +239,7 @@ export default function EventsPage() {
                                     </div>
 
                                     {/* --- VERSIÓN DESKTOP: Línea vertical --- */}
+                                    {/* Se oculta en pantallas pequeñas */}
                                     <div className="hidden md:flex relative flex-shrink-0 w-8 flex-col items-center">
                                         <div className="w-3 h-3 rounded-full bg-gray-600 mt-3 z-10"></div>
                                         {groupIndex < Object.keys(groupedEvents).length - 1 && (
@@ -301,14 +248,13 @@ export default function EventsPage() {
                                     </div>
 
                                     {/* Columna Derecha - Eventos */}
+                                    {/* Ajustamos padding para móvil y escritorio */}
                                     <div className="flex-grow md:pl-8 pb-8 space-y-6">
                                         {dateEvents.map((event) => (
                                             <EventCard
                                                 key={event._id}
                                                 event={event}
                                                 presenterName={getPresenterName(event.presenter)}
-                                                onCancel={() => handleCancelClick(event._id)}
-                                                showCancelButton={dateFilter === "upcoming"}
                                             />
                                         ))}
                                     </div>
@@ -318,19 +264,6 @@ export default function EventsPage() {
                     </div>
                 )}
             </div>
-
-            {/* Modal de Confirmación */}
-            <ConfirmationModal
-                isOpen={showCancelModal}
-                onClose={handleCloseModal}
-                onConfirm={handleConfirmCancel}
-                title="Cancelar inscripción"
-                message="¿Estás seguro de que deseas cancelar tu inscripción a este evento? Esta acción no se puede deshacer."
-                confirmText="Sí, cancelar"
-                cancelText="No, mantener"
-                variant="danger"
-                isLoading={isCancelling}
-            />
         </div>
     )
 }

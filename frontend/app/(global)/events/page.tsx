@@ -11,7 +11,6 @@ import EventFilterBar from "@/app/components/(global)/events/EventFilterBar"
 import EventCard from "@/app/components/(global)/events/EventCard"
 import LoadingSpinner from "@/app/components/(ui)/LoadingSpinner"
 import ErrorDisplay from "@/app/components/(ui)/ErrorDisplay"
-import QuizModal from "@/app/(global)/events/QuizModal";
 
 // --- Definición de Interfaces ---
 
@@ -64,10 +63,6 @@ export default function EventsPage() {
   const [typeFilter, setTypeFilter] = useState<string>("all")
   const [dateFilter, setDateFilter] = useState<string>("upcoming")
   const [presenterFilter, setPresenterFilter] = useState<string>("all")
-
-  // Estado del modal de quiz
-  const [quizModalOpen, setQuizModalOpen] = useState(false)
-  const [selectedEventForQuiz, setSelectedEventForQuiz] = useState<{id: string, title: string} | null>(null)
 
   // --- Carga de Datos ---
 
@@ -187,27 +182,7 @@ export default function EventsPage() {
     return grouped
   }, [events])
 
-  // Función para manejar clic en botón de quiz
-  const handleQuizClick = (eventId: string) => {
-    const event = events.find(e => e._id === eventId)
-    if (event) {
-      setSelectedEventForQuiz({ id: eventId, title: event.title })
-      setQuizModalOpen(true)
-    }
-  }
 
-  // Determinar si mostrar el botón de quiz para un evento específico
-  const shouldShowQuizButton = (eventId: string) => {
-    // Solo mostrar si:
-    // 1. Estamos en la pestaña de eventos finalizados
-    // 2. El usuario es asistente
-    // 3. El usuario tiene status "attended" para este evento
-    return (
-        dateFilter === "past" &&
-        user?.role === "attendee" &&
-        attendanceStatuses.get(eventId) === "attended"
-    )
-  }
 
   // --- Renderizado ---
 
@@ -304,8 +279,6 @@ export default function EventsPage() {
                                   key={event._id}
                                   event={event}
                                   presenterName={getPresenterName(event.presenter)}
-                                  showQuizButton={shouldShowQuizButton(event._id)}
-                                  onQuizClick={handleQuizClick}
                               />
                           ))}
                         </div>
@@ -313,19 +286,6 @@ export default function EventsPage() {
                   )
                 })}
               </div>
-          )}
-
-          {/* Modal de Quiz */}
-          {selectedEventForQuiz && (
-              <QuizModal
-                  isOpen={quizModalOpen}
-                  onClose={() => {
-                    setQuizModalOpen(false)
-                    setSelectedEventForQuiz(null)
-                  }}
-                  eventId={selectedEventForQuiz.id}
-                  eventTitle={selectedEventForQuiz.title}
-              />
           )}
         </div>
       </div>
