@@ -57,6 +57,15 @@ export const AssistanceService = {
                 throw new ApiError.notFound("Asistencia no encontrada");
             }
 
+            switch (assistance.status) {
+                case "attended":
+                    throw new ApiError.badRequest("Ya se asistió a este evento, no se puede cancelar la asistencia");
+                case "cancelled":
+                    throw new ApiError.badRequest("La asistencia ya está cancelada");
+                default:
+                    break;
+            }
+
             if (assistance.user.toString() !== userId) {
                 throw new ApiError.forbidden("No tienes permiso para cancelar esta asistencia");
             }
@@ -86,8 +95,13 @@ export const AssistanceService = {
                 throw new ApiError.notFound("Asistencia no encontrada");
             }
 
-            if (assistance.status.toString() === "cancelled") {
-                throw new ApiError.badRequest("No se puede actualizar una asistencia cancelada");
+            switch (assistance.status) {
+                case "attended":
+                    throw new ApiError.badRequest("Ya se asistió a este evento, no se puede cambiar el estado");
+                case "cancelled":
+                    throw new ApiError.badRequest("La asistencia está cancelada, no se puede cambiar el estado");
+                default:
+                    break;
             }
 
             assistance.status = status;

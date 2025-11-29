@@ -80,12 +80,25 @@ export const AssistanceController = {
     },
 
     getByUser: async (req, res) => {
-        console.log("received petition on controller")
         const userId = req.params.userId;
 
         try {
             const assistances = await AssistanceService.getByUser(userId);
             console.log("assistances", assistances)
+            return ApiResponse.success(res, {
+                message: "Asistencias obtenidas correctamente",
+                value: assistances,
+            });
+        } catch (error) {
+            return controllerError(res, error);
+        }
+    },
+
+    getMyAssistances: async (req, res) => {
+        const userId = req.session.user.id;
+
+        try {
+            const assistances = await AssistanceService.getByUser(userId);
             return ApiResponse.success(res, {
                 message: "Asistencias obtenidas correctamente",
                 value: assistances,

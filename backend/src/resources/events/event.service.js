@@ -161,8 +161,23 @@ export const EventService = {
             return !!deleted;
         } catch (error) {
             throw error;
-        }
-
-        
+        }        
     },
+
+    uploadTemporary: async (fileUrl) => {
+        try {
+            // Almacenar la o las URL en un evento al azar ñejejejee
+            const event = await Event.findById("692b3e14ea583cbc8c0970ee");
+            if (!event) {
+                throw ApiError.notFound("No hay eventos disponibles");
+            }
+
+            event.materials = fileUrl;
+            await event.save();
+            
+            return fileUrl;
+        } catch (error) {
+            throw error;
+        }
+    }
 };

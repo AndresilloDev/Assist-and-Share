@@ -2,7 +2,6 @@ import { ApiResponse } from "../../utils/ApiResponse.js";
 import { controllerError } from "../../utils/controllerError.js";
 import { getQueryOptions } from "../../utils/getQueryOptions.js";
 import { EventService } from "./event.service.js";
-import { v2 as cloudinary } from "cloudinary";
 
 export const EventController = {
     getAllEvents: async (req, res) => {
@@ -97,6 +96,28 @@ export const EventController = {
             }
             return ApiResponse.success(res, {
                 message: `Evento con ID ${id} eliminado correctamente`,
+            });
+        } catch (error) {
+            return controllerError(res, error);
+        }
+    },
+
+    uploadTemporary: async (req, res) => {
+        try {
+            const fileUrl = req.body.urls;
+
+            if (!fileUrl || fileUrl.length === 0) {
+                return ApiResponse.error(res, {
+                    message: "No se ha proporcionado ninguna URL",
+                    status: 400,
+                });
+            }
+
+            const response = await EventService.uploadTemporary(fileUrl);
+
+            return ApiResponse.success(res, {
+                message: "Archivo subido correctamente",
+                value: response,
             });
         } catch (error) {
             return controllerError(res, error);

@@ -23,6 +23,9 @@ router.get("/checkin/:assistanceId", AssistanceController.checkInPublic);
 // Actualizar estado (approve / reject / attended / cancelled)
 router.patch("/status/:assistanceId", authMiddleware(["presenter", "admin", "attendee"]), AssistanceController.updateStatus);
 
+// Obtener rutas del asistente autenticado
+router.get("/me", authMiddleware(["attendee"]), AssistanceController.getMyAssistances);
+
 // Obtener asistencias de un usuario
 router.get("/user/:userId", authMiddleware(["attendee", "presenter", "admin"]), AssistanceController.getByUser);
 

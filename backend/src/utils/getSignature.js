@@ -4,9 +4,10 @@ import { ApiResponse } from "./ApiResponse.js";
 export const getSignature = (_, res) => {
     try {
         const timestamp = Math.floor(Date.now() / 1000);
+        const folder = "event/materials";
 
         const signature = cloudinary.utils.api_sign_request(
-            { timestamp },
+            { timestamp, folder },
             process.env.CLOUD_API_SECRET
         );
 

@@ -287,6 +287,7 @@ export default function CreateEventPage() {
                 date: new Date(formData.date).toISOString()
             }
 
+            console.log("Datos del Evento a crear:", eventData);
             const eventResponse = await api.post('/events', eventData)
             const newEventId = eventResponse.data.value._id
 
