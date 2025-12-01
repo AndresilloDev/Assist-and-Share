@@ -17,6 +17,7 @@ import ErrorDisplay from "@/app/components/(ui)/ErrorDisplay"
 interface Event {
   _id: string
   title: string
+  coverImage: string
   description: string
   capacity: number
   duration: number
