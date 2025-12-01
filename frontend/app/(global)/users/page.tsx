@@ -195,7 +195,7 @@ export default function UsersPage() {
 
                     <button
                         onClick={handleCreatePresenter}
-                        className="w-full md:w-auto bg-white text-black hover:bg-white/90 hover:rounded-3xl duration-300 hover:cursor-pointer px-6 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 shadow-lg shadow-blue-900/20 transition-all"
+                        className="w-full md:w-auto bg-white text-black hover:bg-white/90 hover:rounded-3xl duration-300 hover:cursor-pointer px-6 py-3 rounded-xl font-base flex items-center justify-center gap-2 shadow-lg shadow-blue-900/20 transition-all"
                     >
                         Crear Ponente
                     </button>
@@ -245,8 +245,8 @@ export default function UsersPage() {
                                         {u.speciality && (<div className="flex items-center gap-2 text-sm text-gray-400 bg-gray-900/50 p-2 rounded-lg border border-gray-800/50"><Briefcase size={14} className="text-gray-500" /><span className="truncate">{u.speciality}</span></div>)}
                                     </div>
                                     <div className="flex gap-3 pt-2 border-t border-gray-800">
-                                        <button onClick={() => handleEditUser(u)} className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2 hover:cursor-pointer">Editar</button>
-                                        <button onClick={() => handleDeleteClick(u)} className="flex-1 bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2 hover:cursor-pointer">Eliminar</button>
+                                        <button onClick={() => handleEditUser(u)} className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 py-2 rounded-lg text-sm font-base flex items-center justify-center gap-2 hover:cursor-pointer">Editar</button>
+                                        <button onClick={() => handleDeleteClick(u)} className="flex-1 bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 py-2 rounded-lg text-sm font-base flex items-center justify-center gap-2 hover:cursor-pointer">Eliminar</button>
                                     </div>
                                 </div>
                             ))
@@ -351,14 +351,16 @@ export default function UsersPage() {
 
                                     <div>
                                         <label className="block text-xs text-gray-500 uppercase font-bold mb-1">
-                                            {isEditModalOpen ? "Nueva Contraseña (Opcional)" : "Contraseña"}
+                                            {isEditModalOpen ? "" : "Contraseña"}
                                         </label>
-                                        <input type="password" required={!isEditModalOpen} value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} minLength={6} placeholder={isEditModalOpen ? "Dejar vacío para mantener actual" : "Mínimo 6 caracteres"} className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2.5 text-white focus:border-blue-500 focus:outline-none" />
+                                        {!isEditModalOpen && (
+                                            <input type="password" required={!isEditModalOpen} value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} minLength={6} placeholder={isEditModalOpen ? "Dejar vacío para mantener actual" : "Mínimo 6 caracteres"} className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2.5 text-white focus:border-blue-500 focus:outline-none" />
+                                        )}
                                     </div>
                                 </div>
 
                                 <div className="pt-4">
-                                    <button type="submit" disabled={isSubmitting} className="w-full bg-white hover:rounded-3xl duration-300 text-black hover:cursor-pointer hover:bg-white/90 py-3 rounded-xl font-bold transition-all flex justify-center items-center gap-2 disabled:opacity-50">
+                                    <button type="submit" disabled={isSubmitting} className="w-full bg-white hover:rounded-3xl duration-300 text-black hover:cursor-pointer hover:bg-white/90 py-3 rounded-xl font-base transition-all flex justify-center items-center gap-2 disabled:opacity-50">
                                         {isEditModalOpen ? "Guardar Cambios" : "Crear Ponente"}
                                     </button>
                                 </div>

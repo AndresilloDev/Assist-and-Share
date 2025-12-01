@@ -57,17 +57,17 @@ function LoginForm() {
       }
 
       document.cookie = `auth-token=${data.value.token}; path=/; max-age=${60 * 60 * 24 * 30}; samesite=lax`;
-      
+
       await checkAuth();
-      
+
       setTimeout(() => router.push("/events"), 100);
     } catch (err) {
-      const message = err instanceof AxiosError 
+      const message = err instanceof AxiosError
         ? err.response?.data?.message || "Error del servidor"
-        : err instanceof Error 
-        ? err.message 
-        : "Error al iniciar sesión";
-      
+        : err instanceof Error
+          ? err.message
+          : "Error al iniciar sesión";
+
       setError(message);
     } finally {
       setLoading(false);
@@ -130,7 +130,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense 
+    <Suspense
       fallback={
         <div className="min-h-screen flex items-center justify-center text-white">
           Cargando…

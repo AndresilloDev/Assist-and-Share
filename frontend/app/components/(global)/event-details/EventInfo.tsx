@@ -1,6 +1,6 @@
 "use client"
 
-import { Calendar, MapPin, User, GraduationCap, Users } from 'lucide-react'
+import { Calendar, MapPin, User, GraduationCap, Users, Radio, Timer, Clock } from 'lucide-react'
 import InfoCard from "@/app/components/(ui)/InfoCard"
 
 interface Event {
@@ -11,8 +11,9 @@ interface Event {
   location?: string
   link?: string
   capacity: number
-  attendees?: string[]  // Solo IDs de asistentes aprobados
+  attendees?: string[]
   type: "workshop" | "conference" | "seminar"
+  duration: number
 }
 
 interface EventInfoProps {
@@ -39,41 +40,71 @@ const Modalities: { [key: string]: string } = {
 }
 
 export default function EventInfo({ event, presenterName }: EventInfoProps) {
-  const dateFormatted = new Date(event.date).toLocaleDateString("es-MX", {
+  // --- LÓGICA DE TIEMPO ---
+  const startDate = new Date(event.date)
+  const startTimeMs = startDate.getTime()
+  const durationMs = (event.duration || 0) * 60 * 1000
+  const endTimeMs = startTimeMs + durationMs
+  const nowMs = Date.now()
+
+
+  const isInProgress = nowMs >= startTimeMs && nowMs < endTimeMs
+  const isFinished = nowMs >= endTimeMs
+
+  const dateFormatted = startDate.toLocaleDateString("es-MX", {
     weekday: "short",
     year: "numeric",
     month: "short",
     day: "numeric",
   })
 
-  const hourFormatted = new Date(event.date).toLocaleTimeString("es-MX", {
+  const hourFormatted = startDate.toLocaleTimeString("es-MX", {
     hour: "2-digit",
     minute: "2-digit",
   })
-
-  // Contar solo aprobados
-  const approvedCount = event.attendees?.length ?? 0
 
   return (
     <div className="space-y-6">
 
       <div className="flex items-center gap-3 flex-wrap">
         <h1 className="text-4xl font-bold leading-tight">{event.title}</h1>
+
         <span
-          className={`px-3 py-1 rounded-md text-md font-semibold ${EVENT_TYPE_COLORS[event.type]}`}
+          className={`px-3 py-1 rounded-md text-md font-semibold border border-transparent ${EVENT_TYPE_COLORS[event.type]}`}
         >
           {EVENT_TYPE_LABELS[event.type]}
         </span>
+
+        {isInProgress && (
+          <span className="flex items-center gap-2 px-3 py-1 rounded-md text-md font-semibold bg-red-500/10 text-red-400 border border-red-500/20 animate-pulse">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+            </span>
+            En curso
+          </span>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-4">
 
         <div className="space-y-3">
-
           <InfoCard
             icon={<Calendar className="text-blue-400 flex-shrink-0" size={20} />}
-            label="Fecha y hora"
-            text={`${dateFormatted} • ${hourFormatted}`}
+            label="Fecha"
+            text={`${dateFormatted}`}
+          />
+
+          <InfoCard
+            icon={<GraduationCap className="text-blue-400 flex-shrink-0" size={20} />}
+            label="Modalidad"
+            text={Modalities[event.modality]}
+          />
+
+          <InfoCard
+            icon={<User className="text-blue-400 flex-shrink-0" size={20} />}
+            label="Ponente"
+            text={presenterName}
           />
 
           <InfoCard
@@ -85,30 +116,29 @@ export default function EventInfo({ event, presenterName }: EventInfoProps) {
                 : event.location || "Ubicación no especificada"
             }
           />
-
-          <InfoCard
-            icon={<User className="text-blue-400 flex-shrink-0" size={20} />}
-            label="Ponente"
-            text={presenterName}
-          />
-
         </div>
 
         <div className="space-y-3">
 
           <InfoCard
-            icon={<GraduationCap className="text-blue-400 flex-shrink-0" size={20} />}
-            label="Modalidad"
-            text={Modalities[event.modality]}
+            icon={<Clock className="text-blue-400 flex-shrink-0" size={20} />}
+            label="Hora"
+            text={`${hourFormatted}`}
           />
 
-          
+
+
           <InfoCard
             icon={<Users className="text-blue-400 flex-shrink-0" size={20} />}
             label="Capacidad"
             text={`${event.capacity} Asistentes`}
           />
-          
+
+          <InfoCard
+            icon={<Timer className="text-blue-400 flex-shrink-0" size={20} />}
+            label="Duración"
+            text={`${event.duration} minutos`}
+          />
 
         </div>
 

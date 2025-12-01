@@ -9,7 +9,7 @@ interface EventHeaderProps {
 export default function EventHeader({ imageUrl }: EventHeaderProps) {
   return (
     <HoverCard>
-      <div className="relative z-10 h-[200px] w-full md:h-[550px] rounded-2xl overflow-hidden">
+      <div className="relative z-10 h-[200px] w-full md:h-[580px] rounded-2xl overflow-hidden">
         <img
           src={imageUrl}
           alt="Event preview"

@@ -24,15 +24,18 @@ const roleBasedRoutes: Record<string, string[]> = {
   '/presenter/dashboard': ['presenter', 'admin'],
   '/events': ['attendee', 'admin', 'presenter'],
   '/my-inscriptions': ['attendee'],
-  '/feedback': ['presenter', 'admin'],
+  '/feedback': ['presenter'],
+  '/send-feedback': ['attendee'],
 };
 
 async function verifyToken(token: string) {
   try {
     const { payload } = await jwtVerify(token, secret);
     return payload;
-  } catch (error) {
-    console.error('[Proxy] Error verificando token:', error);
+  } catch (error: any) {
+    console.error(`[Proxy Error] Falló verificación. Token: ${token.substring(0, 10)}...`);
+    console.error(`[Proxy Error] Mensaje: ${error.message}`);
+    console.error(`[Proxy Error] Secret usado (primera letra): ${new TextDecoder().decode(secret)[0]}`);
     return null;
   }
 }

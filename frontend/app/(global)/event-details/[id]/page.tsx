@@ -15,11 +15,10 @@ import EventDescription from "@/app/components/(global)/event-details/EventDescr
 import EventRequirements from "@/app/components/(global)/event-details/EventRequirements"
 import EventMaterials from "@/app/components/(global)/event-details/EventMaterials"
 
-// --- Definición de Interfaces ---
-
 interface Event {
   _id: string
   title: string
+  coverImage: string
   description: string
   capacity: number
   duration: number
@@ -33,6 +32,7 @@ interface Event {
   attendees?: string[]
   createdAt: string
   updatedAt: string
+  materials?: string[]
 }
 
 interface Presenter {
@@ -45,12 +45,10 @@ interface Presenter {
 interface Material {
   id: string
   name: string
-  type: "pptx" | "xlsx" | "pdf" | "docx"
+  type: "pptx" | "xlsx" | "pdf" | "docx" | "image"
   uploadDate: string
   url: string
 }
-
-// --- Componente Principal ---
 
 export default function EventDetail() {
   const params = useParams()
@@ -63,36 +61,45 @@ export default function EventDetail() {
   const [materials, setMaterials] = useState<Material[]>([])
   const [assistance, setAssistance] = useState<any>(null)
 
-  const ACTIVE_STATUSES = ["pending", "approved"]
-  const isPending = assistance?.status === "pending"
-  const isApproved = assistance?.status === "approved"
-  const isEnrolled = !!assistance && ACTIVE_STATUSES.includes(assistance.status)
-  const isPastEvent = event ? new Date(event.date) < new Date() : false
-  const isRejected = assistance?.status === "rejected"
-  const isAttended = assistance?.status === "attended"
+  // Estado de la UI
+  const [isLoadingEvent, setIsLoadingEvent] = useState(true)
+  const [error, setError] = useState("")
+  const [showCancelModal, setShowCancelModal] = useState(false)
+  const [isCancelling, setIsCancelling] = useState(false)
 
-  const getFileType = (url: string): Material["type"] | "image" => {
+  // Estado de Edición
+  const [description, setDescription] = useState("")
+  const [requirements, setRequirements] = useState("")
+  const [hasChanges, setHasChanges] = useState(false)
+
+  // --- LÓGICA DE ESTADOS Y VALIDACIÓN (OPTIMIZADA) ---
+
+  const getFileType = (url: string): Material["type"] => {
     if (url.match(/\.pdf$/i)) return "pdf"
     if (url.match(/\.(pptx|ppt)$/i)) return "pptx"
     if (url.match(/\.(xlsx|xls)$/i)) return "xlsx"
     if (url.match(/\.(docx|doc)$/i)) return "docx"
     if (url.match(/\.(jpg|jpeg|png|gif|webp)$/i)) return "image"
-    return "docx" // fallback seguro
+    return "docx"
   }
 
+  // --- ARREGLO DEL ERROR DE FECHA Y CONSTANTES ---
+  // Nota: Usamos .getTime() para que sea una comparación numérica válida
+  const eventDateMs = event ? new Date(event.date).getTime() : 0
+  const nowMs = Date.now()
 
-  // Estado de la UI (carga y errores)
-  const [isLoadingEvent, setIsLoadingEvent] = useState(true)
-  const [error, setError] = useState("")
-
-  // Estado de Edición (Formulario)
-  const [description, setDescription] = useState("")
-  const [requirements, setRequirements] = useState("")
-  const [hasChanges, setHasChanges] = useState(false)
-
-  // Estado del modal de confirmación de cancelación
-  const [showCancelModal, setShowCancelModal] = useState(false)
-  const [isCancelling, setIsCancelling] = useState(false)
+  const statusLogic = {
+    isPending: assistance?.status === "pending",
+    isApproved: assistance?.status === "approved",
+    isRejected: assistance?.status === "rejected",
+    isAttended: assistance?.status === "attended",
+    // Verifica si hay asistencia y si el estado es válido
+    isEnrolled: !!assistance && ["pending", "approved"].includes(assistance.status),
+    isPastEvent: event ? eventDateMs < nowMs : false,
+    // Corrección específica que pediste:
+    isEventFinished: event ? (eventDateMs + (event.duration * 60 * 1000)) < nowMs : false,
+    hasChanges
+  }
 
   // --- Carga de Datos ---
 
@@ -102,42 +109,35 @@ export default function EventDetail() {
     try {
       const { data: eventData } = await api.get(`/events/${id}`)
       const currentEvent = eventData.value
-
+      console.log("Datos del Evento:", eventData);
       setEvent(currentEvent)
+
+      // Cargar estados del formulario
       setDescription(currentEvent.description || "")
       setRequirements(currentEvent.requirements?.join("\n") || "")
 
       if (currentEvent.presenter) {
-        const { data: presenterData } = await api.get(
-          `/users/${currentEvent.presenter}`
-        )
+        const { data: presenterData } = await api.get(`/users/${currentEvent.presenter}`)
         setPresenter(presenterData.value)
       }
 
-      // TODO: Esto debería venir de la API a futuro cracks
-      // Cargar materiales si vienen como arreglo de URLs
       if (Array.isArray(currentEvent.materials)) {
         const formatted = currentEvent.materials.map((url: string, index: number) => {
-          const fileName = url.split("/").pop() || `material_${index + 1}`;
-          const fileType = getFileType(fileName);
-
+          const fileName = url.split("/").pop() || `material_${index + 1}`
           return {
             id: `${index + 1}`,
             name: fileName,
-            type: fileType,
+            type: getFileType(fileName),
             uploadDate: new Date(currentEvent.updatedAt).toLocaleDateString("es-MX"),
             url
-          };
-        });
-
-        setMaterials(formatted);
+          }
+        })
+        setMaterials(formatted)
       } else {
-        setMaterials([]);
+        setMaterials([])
       }
-
     } catch (err: any) {
-      const errMsg = err.response?.data?.message || "Error al cargar el evento"
-      setError(errMsg)
+      setError(err.response?.data?.message || "Error al cargar el evento")
     } finally {
       setIsLoadingEvent(false)
     }
@@ -145,16 +145,15 @@ export default function EventDetail() {
 
   const fetchUserAssistance = async () => {
     if (!user) return
-
     const { data } = await api.get(`/assistance/user/${user.id}`)
     const found = data.value.find((a: any) => a.event?._id === id)
-    console.log("Asistencia encontrada:", found)
 
     if (!found || found.status === "cancelled") {
       setAssistance(null)
     } else {
       setAssistance(found)
     }
+    console.log("Datos de asistencia:", assistance);
   }
 
   useEffect(() => {
@@ -163,21 +162,21 @@ export default function EventDetail() {
     fetchUserAssistance()
   }, [id, user])
 
-  // --- Manejadores de Eventos (Handlers) ---
+  useEffect(() => {
+    console.log("El estado de assistance cambió a:", assistance)
+  }, [assistance])
+
+  // --- Handlers ---
 
   const handleSaveChanges = async () => {
     try {
       await api.put(`/events/${id}`, {
         description,
-        requirements: requirements
-          .split("\n")
-          .map((r) => r.trim())
-          .filter((r) => r !== ""),
+        requirements: requirements.split("\n").map((r) => r.trim()).filter(Boolean),
       })
       setHasChanges(false)
     } catch (err: any) {
-      const errMsg = err.response?.data?.message || "Error al guardar cambios"
-      setError(errMsg)
+      setError(err.response?.data?.message || "Error al guardar cambios")
     }
   }
 
@@ -190,13 +189,8 @@ export default function EventDetail() {
     }
   }
 
-  const handleCancelClick = () => {
-    setShowCancelModal(true)
-  }
-
   const handleConfirmCancel = async () => {
     if (!assistance) return
-
     setIsCancelling(true)
     try {
       await api.delete(`/assistance/${assistance._id}`)
@@ -205,39 +199,16 @@ export default function EventDetail() {
       await fetchUserAssistance()
       await fetchEvent()
     } catch (err: any) {
-      await fetchUserAssistance()
       setError(err.response?.data?.message || "Error al cancelar inscripción")
+      await fetchUserAssistance()
     } finally {
       setIsCancelling(false)
     }
   }
 
-  const handleCloseModal = () => {
-    if (!isCancelling) {
-      setShowCancelModal(false)
-    }
-  }
+  // --- Render ---
 
-  const handleRemoveMaterial = (materialId: string) => {
-    setMaterials(materials.filter((m) => m.id !== materialId))
-    setHasChanges(true)
-  }
-
-  const handleDescriptionChange = (value: string) => {
-    setDescription(value)
-    setHasChanges(true)
-  }
-
-  const handleRequirementsChange = (value: string) => {
-    setRequirements(value)
-    setHasChanges(true)
-  }
-
-  // --- Lógica de Renderizado ---
-
-  const isLoading = loadingAuth || isLoadingEvent
-
-  if (isLoading) {
+  if (loadingAuth || isLoadingEvent) {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center">
         <LoadingSpinner />
@@ -261,42 +232,38 @@ export default function EventDetail() {
     )
   }
 
-  // --- TSX Principal ---
+  const isPresenterUser = user?.role === "presenter" && user?.id === event?.presenter
 
   return (
     <div className="min-h-screen text-white px-8 py-10" style={{ background: "linear-gradient(180deg, #1B293A 0%, #040711 10%)" }}>
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          <EventHeader imageUrl="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS9VzbIhiRMB3MDNu1_rl05tug8QtXXRpKuUA&s" />
+          <EventHeader imageUrl={event.coverImage} />
 
           <div className="flex flex-col justify-between">
             <EventInfo
               event={event}
-              presenterName={
-                presenter
-                  ? `${presenter.first_name} ${presenter.last_name}`
-                  : "No disponible"
-              }
+              presenterName={presenter ? `${presenter.first_name} ${presenter.last_name}` : "No disponible"}
             />
 
             <EventActions
               user={user}
-              isAdmin={user?.role === "admin"}
-              isPresenter={user?.role === "presenter" && user?.id === event?.presenter}
-              isAttendee={user?.role === "attendee"}
-              changed={hasChanges}
-              eventId={event._id}
-              eventTitle={event.title}
-              assistanceId={assistance?._id}
-              onSaveChanges={handleSaveChanges}
-              onEnroll={handleEnroll}
-              onCancel={handleCancelClick}
-              isEnrolled={isEnrolled}
-              isPending={isPending}
-              isApproved={isApproved}
-              isRejected={isRejected}
-              isPastEvent={isPastEvent}
-              isAttended={isAttended}
+              eventData={{
+                id: event._id,
+                title: event.title,
+                assistanceId: assistance?._id
+              }}
+              roles={{
+                isAdmin: user?.role === "admin",
+                isPresenter: isPresenterUser,
+                isAttendee: user?.role === "attendee"
+              }}
+              status={statusLogic}
+              actions={{
+                onSaveChanges: handleSaveChanges,
+                onEnroll: handleEnroll,
+                onCancel: () => setShowCancelModal(true)
+              }}
             />
 
           </div>
@@ -304,26 +271,28 @@ export default function EventDetail() {
 
         <EventDescription
           description={description}
-          canEdit={user?.role === "presenter" && user?.id === event?.presenter}
-          onChange={handleDescriptionChange}
+          canEdit={isPresenterUser}
+          onChange={(val) => { setDescription(val); setHasChanges(true); }}
         />
 
         <EventRequirements
           requirements={requirements}
-          canEdit={user?.role === "presenter" && user?.id === event?.presenter}
-          onChange={handleRequirementsChange}
+          canEdit={isPresenterUser}
+          onChange={(val) => { setRequirements(val); setHasChanges(true); }}
         />
 
         <EventMaterials
           materials={materials}
-          canEdit={user?.role === "presenter" && user?.id === event?.presenter}
-          onRemove={handleRemoveMaterial}
+          canEdit={isPresenterUser}
+          onRemove={(matId) => {
+            setMaterials(materials.filter((m) => m.id !== matId))
+            setHasChanges(true)
+          }}
         />
 
-        {/* Modal de Confirmación */}
         <ConfirmationModal
           isOpen={showCancelModal}
-          onClose={handleCloseModal}
+          onClose={() => !isCancelling && setShowCancelModal(false)}
           onConfirm={handleConfirmCancel}
           title="Cancelar inscripción"
           message="¿Estás seguro de que deseas cancelar tu inscripción a este evento? Esta acción no se puede deshacer."

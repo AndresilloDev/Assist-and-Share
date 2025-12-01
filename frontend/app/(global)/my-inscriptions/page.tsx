@@ -91,12 +91,12 @@ export default function EventsPage() {
             // 1. Obtener todas las inscripciones del usuario
             const { data: assistanceData } = await api.get(`/assistance/user/${user.id}`)
 
-            // 2. Filtrar por status activo (pending/approved)
+            // 2. Filtrar por status activo (pending/approved) y asegurar que existe el evento
             const activeInscriptions = assistanceData.value.filter((a: any) =>
                 ["pending", "approved", "attended"].includes(a.status) && a.event
             )
 
-            // 3. Extraer eventos y aplicar filtros locales
+            // 3. Extraer eventos
             let filteredEvents = activeInscriptions.map((a: any) => a.event)
 
             // Filtro por Tipo
@@ -109,13 +109,23 @@ export default function EventsPage() {
                 filteredEvents = filteredEvents.filter((e: Event) => e.presenter === presenterFilter)
             }
 
-            // Filtro por Fecha
-            const now = new Date()
-            if (dateFilter === "upcoming") {
-                filteredEvents = filteredEvents.filter((e: Event) => new Date(e.date) >= now)
-            } else if (dateFilter === "past") {
-                filteredEvents = filteredEvents.filter((e: Event) => new Date(e.date) < now)
-            }
+            // Filtro por Fecha (Lógica mejorada con duración)
+            const nowMs = new Date().getTime()
+
+            filteredEvents = filteredEvents.filter((e: Event) => {
+                const startMs = new Date(e.date).getTime()
+                // Duración en minutos a milisegundos. Si no hay duración, asume 0.
+                const endMs = startMs + ((e.duration || 0) * 60 * 1000)
+
+                if (dateFilter === "upcoming") {
+                    // Es próximo si termina DESPUÉS de ahora (Futuro puro O En curso)
+                    return endMs > nowMs
+                } else if (dateFilter === "past") {
+                    // Es pasado solo si YA TERMINÓ (Fin <= Ahora)
+                    return endMs <= nowMs
+                }
+                return true
+            })
 
             // Ordenar por fecha
             filteredEvents.sort((a: Event, b: Event) => new Date(a.date).getTime() - new Date(b.date).getTime())
@@ -218,7 +228,6 @@ export default function EventsPage() {
                                 <div key={dateKey} className="relative flex flex-col md:flex-row">
 
                                     {/* --- VERSIÓN MÓVIL: Header de fecha --- */}
-                                    {/* Se muestra solo en pantallas pequeñas */}
                                     <div className="md:hidden pb-4 mb-2 border-b border-gray-800">
                                         <p className="text-xl font-bold text-white">
                                             {dayNum} de {month} <span className="text-gray-500 font-normal text-base capitalize">({weekday})</span>
@@ -226,7 +235,6 @@ export default function EventsPage() {
                                     </div>
 
                                     {/* --- VERSIÓN DESKTOP: Columna Izquierda - Fecha --- */}
-                                    {/* Se oculta en pantallas pequeñas */}
                                     <div className="hidden md:block flex-shrink-0 w-48 pr-8 pt-2">
                                         <div className="text-left">
                                             <p className="text-xl font-semibold">
@@ -239,7 +247,6 @@ export default function EventsPage() {
                                     </div>
 
                                     {/* --- VERSIÓN DESKTOP: Línea vertical --- */}
-                                    {/* Se oculta en pantallas pequeñas */}
                                     <div className="hidden md:flex relative flex-shrink-0 w-8 flex-col items-center">
                                         <div className="w-3 h-3 rounded-full bg-gray-600 mt-3 z-10"></div>
                                         {groupIndex < Object.keys(groupedEvents).length - 1 && (
@@ -248,7 +255,6 @@ export default function EventsPage() {
                                     </div>
 
                                     {/* Columna Derecha - Eventos */}
-                                    {/* Ajustamos padding para móvil y escritorio */}
                                     <div className="flex-grow md:pl-8 pb-8 space-y-6">
                                         {dateEvents.map((event) => (
                                             <EventCard

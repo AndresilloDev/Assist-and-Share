@@ -96,10 +96,17 @@ export default function EventsPage() {
 
       // Mapear cada asistencia por el ID del evento
       data.value?.forEach((assistance: any) => {
+        // Si el evento fue borrado, assistance.event puede ser null.
+        // Si es null, simplemente saltamos este registro.
+        if (!assistance.event) return;
+
         const eventId = typeof assistance.event === 'string'
-            ? assistance.event
-            : assistance.event._id
-        statusMap.set(eventId, assistance.status)
+          ? assistance.event
+          : assistance.event._id
+
+        if (eventId) {
+          statusMap.set(eventId, assistance.status)
+        }
       })
 
       return statusMap
@@ -111,9 +118,7 @@ export default function EventsPage() {
 
   const fetchEvents = async () => {
     setIsLoadingEvents(true)
-    if (!isLoadingPresenters) {
-      setError("")
-    }
+    if (!isLoadingPresenters) setError("")
 
     try {
       const params: any = {}
@@ -121,18 +126,37 @@ export default function EventsPage() {
       if (presenterFilter !== "all") params.presenter = presenterFilter
 
       const now = new Date()
+      const nowMs = now.getTime()
+
       if (dateFilter === "upcoming") {
-        params["date[gte]"] = now.toISOString()
+        const bufferTime = new Date(nowMs - (24 * 60 * 60 * 1000))
+        params["date[gte]"] = bufferTime.toISOString()
       } else if (dateFilter === "past") {
         params["date[lt]"] = now.toISOString()
       }
+
       params.sort = "date"
 
       const { data: eventsData } = await api.get("/events", { params })
-      const fetchedEvents = eventsData.value.results
-      setEvents(fetchedEvents)
+      const rawEvents: Event[] = eventsData.value.results
 
-      // Si estamos en eventos finalizados y el usuario es asistente, obtener todas sus asistencias
+      const filteredEvents = rawEvents.filter(event => {
+        const startMs = new Date(event.date).getTime()
+        const endMs = startMs + (event.duration * 60 * 1000)
+
+        if (dateFilter === "upcoming") {
+          // Es próximo si AÚN NO TERMINA (Fin > Ahora)
+          // Esto incluye: Futuros Y En Curso
+          return endMs > nowMs
+        } else {
+          // Es pasado solo si YA TERMINÓ (Fin <= Ahora)
+          return endMs <= nowMs
+        }
+      })
+
+      setEvents(filteredEvents)
+
+      // Lógica de asistencias
       if (dateFilter === "past" && user?.role === "attendee") {
         setIsLoadingAttendance(true)
         const statusMap = await fetchUserAttendances()
@@ -141,10 +165,10 @@ export default function EventsPage() {
       } else {
         setAttendanceStatuses(new Map())
       }
+
     } catch (err: any) {
       const errMsg = err.response?.data?.message || "Error al cargar eventos"
       setError(errMsg)
-      console.error("Error fetching events:", err)
     } finally {
       setIsLoadingEvents(false)
     }
@@ -190,104 +214,104 @@ export default function EventsPage() {
   const pageTitle = user?.role === "presenter" ? "Ponencias" : "Eventos"
 
   return (
-      <div className="min-h-screen text-white p-4 md:p-8" style={{ background: "linear-gradient(180deg, #1B293A 0%, #040711 10%)" }}>
-        <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen text-white p-4 md:p-8" style={{ background: "linear-gradient(180deg, #1B293A 0%, #040711 10%)" }}>
+      <div className="max-w-7xl mx-auto">
 
-          {/* Header Responsive: Columna en móvil, Fila en desktop */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-0 mb-8 md:mb-12">
-            <div className="flex flex-col md:flex-row md:items-center gap-4 w-full md:w-auto">
-              <h1 className="text-3xl md:text-5xl font-bold">{pageTitle}</h1>
-            </div>
-
-            <div className="w-full md:w-auto">
-              <AnimatedSwitch
-                  value={dateFilter}
-                  onChange={setDateFilter}
-                  options={[
-                    { value: "upcoming", label: "Próximos" },
-                    { value: "past", label: "Finalizados" },
-                  ]}
-              />
-            </div>
+        {/* Header Responsive: Columna en móvil, Fila en desktop */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-0 mb-8 md:mb-12">
+          <div className="flex flex-col md:flex-row md:items-center gap-4 w-full md:w-auto">
+            <h1 className="text-3xl md:text-5xl font-bold">{pageTitle}</h1>
           </div>
 
-          <EventFilterBar
-              typeFilter={typeFilter}
-              onTypeChange={setTypeFilter}
-              presenterFilter={presenterFilter}
-              onPresenterChange={setPresenterFilter}
-              presenters={presenters}
-          />
-
-          {error && <ErrorDisplay message={error} />}
-
-          {isLoading && <LoadingSpinner />}
-
-          {!isLoading && Object.keys(groupedEvents).length === 0 && (
-              <div className="text-center py-12 text-gray-400">No se encontraron eventos</div>
-          )}
-
-          {isLoadingAttendance && (
-              <div className="text-center py-4 text-gray-400">
-                Verificando asistencias...
-              </div>
-          )}
-
-          {!isLoading && !error && (
-              <div className="space-y-8 md:space-y-0">
-                {Object.entries(groupedEvents).map(([dateKey, dateEvents], groupIndex) => {
-                  const groupDate = new Date(dateKey + 'T00:00:00');
-
-                  const dayNum = groupDate.toLocaleDateString("es-MX", { day: "numeric" });
-                  const month = groupDate.toLocaleDateString("es-MX", { month: "long" }).replace(/^\w/, c => c.toUpperCase());
-                  const weekday = groupDate.toLocaleDateString("es-MX", { weekday: "long" });
-
-                  return (
-                      <div key={dateKey} className="relative flex flex-col md:flex-row">
-
-                        {/* --- VERSIÓN MÓVIL: Encabezado de fecha --- */}
-                        <div className="md:hidden pb-4 mb-2 border-b border-gray-800">
-                          <p className="text-xl font-bold text-white">
-                            {dayNum} de {month} <span className="text-gray-500 font-normal text-base capitalize">({weekday})</span>
-                          </p>
-                        </div>
-
-                        {/* --- VERSIÓN DESKTOP: Columna Izquierda - Fecha --- */}
-                        <div className="hidden md:block flex-shrink-0 w-48 pr-8 pt-2">
-                          <div className="text-left">
-                            <p className="text-xl font-semibold">
-                              {month} {dayNum}
-                            </p>
-                            <p className="text-sm text-gray-500 capitalize">
-                              {weekday}
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* --- VERSIÓN DESKTOP: Línea vertical --- */}
-                        <div className="hidden md:flex relative flex-shrink-0 w-8 flex-col items-center">
-                          <div className="w-3 h-3 rounded-full bg-gray-600 mt-3 z-10"></div>
-                          {groupIndex < Object.keys(groupedEvents).length - 1 && (
-                              <div className="absolute top-3 bottom-0 left-1/2 -translate-x-1/2 w-px border-l-2 border-dashed border-gray-800"></div>
-                          )}
-                        </div>
-
-                        {/* --- CONTENIDO: Lista de Eventos --- */}
-                        <div className="flex-grow md:pl-8 md:pb-8 space-y-6">
-                          {dateEvents.map((event) => (
-                              <EventCard
-                                  key={event._id}
-                                  event={event}
-                                  presenterName={getPresenterName(event.presenter)}
-                              />
-                          ))}
-                        </div>
-                      </div>
-                  )
-                })}
-              </div>
-          )}
+          <div className="w-full md:w-auto">
+            <AnimatedSwitch
+              value={dateFilter}
+              onChange={setDateFilter}
+              options={[
+                { value: "upcoming", label: "Próximos" },
+                { value: "past", label: "Finalizados" },
+              ]}
+            />
+          </div>
         </div>
+
+        <EventFilterBar
+          typeFilter={typeFilter}
+          onTypeChange={setTypeFilter}
+          presenterFilter={presenterFilter}
+          onPresenterChange={setPresenterFilter}
+          presenters={presenters}
+        />
+
+        {error && <ErrorDisplay message={error} />}
+
+        {isLoading && <LoadingSpinner />}
+
+        {!isLoading && Object.keys(groupedEvents).length === 0 && (
+          <div className="text-center py-12 text-gray-400">No se encontraron eventos</div>
+        )}
+
+        {isLoadingAttendance && (
+          <div className="text-center py-4 text-gray-400">
+            Verificando asistencias...
+          </div>
+        )}
+
+        {!isLoading && !error && (
+          <div className="space-y-8 md:space-y-0">
+            {Object.entries(groupedEvents).map(([dateKey, dateEvents], groupIndex) => {
+              const groupDate = new Date(dateKey + 'T00:00:00');
+
+              const dayNum = groupDate.toLocaleDateString("es-MX", { day: "numeric" });
+              const month = groupDate.toLocaleDateString("es-MX", { month: "long" }).replace(/^\w/, c => c.toUpperCase());
+              const weekday = groupDate.toLocaleDateString("es-MX", { weekday: "long" });
+
+              return (
+                <div key={dateKey} className="relative flex flex-col md:flex-row">
+
+                  {/* --- VERSIÓN MÓVIL: Encabezado de fecha --- */}
+                  <div className="md:hidden pb-4 mb-2 border-b border-gray-800">
+                    <p className="text-xl font-bold text-white">
+                      {dayNum} de {month} <span className="text-gray-500 font-normal text-base capitalize">({weekday})</span>
+                    </p>
+                  </div>
+
+                  {/* --- VERSIÓN DESKTOP: Columna Izquierda - Fecha --- */}
+                  <div className="hidden md:block flex-shrink-0 w-48 pr-8 pt-2">
+                    <div className="text-left">
+                      <p className="text-xl font-semibold">
+                        {month} {dayNum}
+                      </p>
+                      <p className="text-sm text-gray-500 capitalize">
+                        {weekday}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* --- VERSIÓN DESKTOP: Línea vertical --- */}
+                  <div className="hidden md:flex relative flex-shrink-0 w-8 flex-col items-center">
+                    <div className="w-3 h-3 rounded-full bg-gray-600 mt-3 z-10"></div>
+                    {groupIndex < Object.keys(groupedEvents).length - 1 && (
+                      <div className="absolute top-3 bottom-0 left-1/2 -translate-x-1/2 w-px border-l-2 border-dashed border-gray-800"></div>
+                    )}
+                  </div>
+
+                  {/* --- CONTENIDO: Lista de Eventos --- */}
+                  <div className="flex-grow md:pl-8 md:pb-8 space-y-6">
+                    {dateEvents.map((event) => (
+                      <EventCard
+                        key={event._id}
+                        event={event}
+                        presenterName={getPresenterName(event.presenter)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
+    </div>
   )
 }

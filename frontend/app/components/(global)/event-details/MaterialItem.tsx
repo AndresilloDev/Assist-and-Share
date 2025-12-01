@@ -1,11 +1,12 @@
 "use client";
 
-import { Download, X, ImageIcon, File } from "lucide-react";
+import { Download, X } from "lucide-react";
 
+// --- Tipos e Interfaces ---
 interface Material {
   id: string;
   name: string;
-  type?: string; // hacemos opcional, porque viene desde Cloudinary
+  type?: string;
   uploadDate: string;
   url: string;
 }
@@ -16,30 +17,44 @@ interface MaterialItemProps {
   onRemove: () => void;
 }
 
-// Colores para archivos no imagen
+// --- Configuración de Iconos ---
 const MATERIAL_ICONS: Record<string, { bg: string; icon: string }> = {
   pptx: { bg: "bg-orange-500", icon: "PPT" },
   xlsx: { bg: "bg-green-500", icon: "XLS" },
   pdf: { bg: "bg-red-500", icon: "PDF" },
   docx: { bg: "bg-blue-500", icon: "DOC" },
+  other: { bg: "bg-gray-700", icon: "FILE" },
 };
 
-// Detecta automáticamente si es imagen
+// --- Funciones Auxiliares ---
+
+// Detecta si es imagen para mostrar miniatura
 function isImage(url: string) {
   return /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
 }
 
-// Detecta tipo por extensión
+// Detecta extensión para elegir color e icono
 function detectFileType(name: string): string {
   const ext = name.split(".").pop()?.toLowerCase() || "";
-  return ["pptx", "xlsx", "pdf", "docx"].includes(ext) ? ext : "other";
+  return MATERIAL_ICONS[ext] ? ext : "other";
 }
 
-export default function MaterialItem({ material, canEdit, onRemove }: MaterialItemProps) {
-  const autoType = detectFileType(material.name);
-  const iconData = MATERIAL_ICONS[autoType] || MATERIAL_ICONS["pdf"];
+// Genera URL de descarga forzada (Simple)
+function getDownloadUrl(url: string) {
+  // Simplemente inyectamos 'fl_attachment' si no existe.
+  // Esto fuerza al navegador a descargar el archivo en lugar de abrirlo.
+  if (url.includes("/upload/") && !url.includes("fl_attachment")) {
+    return url.replace("/upload/", "/upload/fl_attachment/");
+  }
+  return url;
+}
 
+// --- Componente Principal ---
+export default function MaterialItem({ material, canEdit, onRemove }: MaterialItemProps) {
+  const fileType = detectFileType(material.name);
+  const iconData = MATERIAL_ICONS[fileType];
   const isImg = isImage(material.url);
+  const downloadUrl = getDownloadUrl(material.url);
 
   return (
     <div
@@ -52,6 +67,7 @@ export default function MaterialItem({ material, canEdit, onRemove }: MaterialIt
         e.currentTarget.style.setProperty("--mouse-y", `${y}px`);
       }}
     >
+      {/* Efecto de luz al pasar el mouse */}
       <div
         className="pointer-events-none absolute opacity-0 group-hover/item:opacity-100 transition-opacity duration-500 -inset-px rounded-xl"
         style={{
@@ -60,9 +76,8 @@ export default function MaterialItem({ material, canEdit, onRemove }: MaterialIt
         }}
       />
 
+      {/* Contenido Izquierdo: Icono/Preview + Info */}
       <div className="relative z-10 flex items-center gap-4">
-
-        {/* 🔥 SI ES IMAGEN → Miniatura */}
         {isImg ? (
           <img
             src={material.url}
@@ -70,7 +85,6 @@ export default function MaterialItem({ material, canEdit, onRemove }: MaterialIt
             className="w-14 h-14 object-cover rounded-lg border border-gray-800"
           />
         ) : (
-          // 🔥 SI ES ARCHIVO → Icono
           <div
             className={`${iconData.bg} w-14 h-14 rounded-lg flex items-center justify-center text-white font-bold text-sm flex-shrink-0`}
           >
@@ -79,31 +93,32 @@ export default function MaterialItem({ material, canEdit, onRemove }: MaterialIt
         )}
 
         <div>
-          <p className="text-white font-semibold">{material.name}</p>
+          <p className="text-white font-semibold truncate max-w-[200px]">{material.name}</p>
           <p className="text-gray-400 text-sm">Subido el {material.uploadDate}</p>
         </div>
       </div>
 
+      {/* Contenido Derecho: Acciones */}
       <div className="relative z-10 flex items-center gap-2">
-        {/* Botón de descarga */}
         <a
-          href={material.url}
+          href={downloadUrl}
           target="_blank"
           rel="noopener noreferrer"
           className="p-2 hover:bg-gray-800 rounded-lg transition-colors duration-300"
+          title="Descargar"
         >
           <Download className="text-gray-400 hover:text-white transition-colors" size={20} />
         </a>
 
-        {/* Botón de eliminar si puede editar */}
-        {canEdit && (
+        {/* {canEdit && (
           <button
             onClick={onRemove}
             className="p-2 hover:bg-red-900/20 rounded-lg transition-colors duration-300"
+            title="Eliminar"
           >
             <X className="text-gray-400 hover:text-red-400 transition-colors" size={20} />
           </button>
-        )}
+        )} */}
       </div>
     </div>
   );

@@ -12,15 +12,21 @@ export async function POST(request: Request) {
       );
     }
 
-    // Llamar al backend para autenticar
+    // Llamar al backend (Elastic Beanstalk / API Gateway)
     const backendUrl = process.env.NEXT_PUBLIC_API_URL;
-    const response = await fetch(`${backendUrl}/auth/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email, password }),
-    });
+
+    // Agregamos un try/catch específico para el fetch por si el backend está caído
+    let response;
+    try {
+      response = await fetch(`${backendUrl}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+    } catch (fetchError) {
+      console.error("Error conectando con el backend:", fetchError);
+      return NextResponse.json({ success: false, message: 'El servicio de autenticación no responde' }, { status: 503 });
+    }
 
     const data = await response.json();
 
@@ -31,7 +37,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // Verificar que tenemos los datos necesarios
+    // Verificar datos
     if (!data.success || !data.value?.token) {
       return NextResponse.json(
         { success: false, message: 'Respuesta inválida del servidor' },
@@ -39,25 +45,27 @@ export async function POST(request: Request) {
       );
     }
 
-    // Guardar el token en una cookie httpOnly
+    // --- GESTIÓN DE COOKIES ---
     const cookieStore = await cookies();
+    cookieStore.delete('auth-token');
+    const isProduction = process.env.NODE_ENV === 'production';
+
     cookieStore.set('auth-token', data.value.token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isProduction,
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 30, // 30 días
+      maxAge: 60 * 60 * 24 * 30,
       path: '/',
     });
 
-    console.log('[Credentials Login] Login exitoso, cookie configurada');
+    console.log(`[Login] Cookie establecida. Secure: ${isProduction}`);
 
-    // Devolver los datos del usuario
     return NextResponse.json({
       success: true,
       message: 'Inicio de sesión exitoso',
       user: data.value.user,
-      token: data.value.token, // Para que el cliente también pueda acceder
     });
+
   } catch (error) {
     console.error('[Credentials Login] Error:', error);
     return NextResponse.json(
