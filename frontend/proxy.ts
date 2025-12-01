@@ -2,9 +2,8 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
 
-const secret = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'fallback-secret'
-);
+const secretStr = process.env.JWT_SECRET || '';
+const secret = new TextEncoder().encode(secretStr);
 
 const publicRoutes = [
   '/login',
