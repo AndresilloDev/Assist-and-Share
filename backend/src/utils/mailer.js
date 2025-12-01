@@ -15,9 +15,9 @@ export const sendEmail = async (options) => {
 
     //ESTA MADRE FALLA, CULPA DE CESAR, LO COMENTO PA QUE NO TRUENE EL FRON AL QUERER BORRAR UN EVENTO DONDE HAY UN USUARIO ASISTIENDO
 
-    // if (!options.to || !options.subject || (!options.text && !options.html)) {
-    //     throw new Error("Faltan campos requeridos para enviar el correo");
-    // }
+    if ((!options.to && !options.bcc) || !options.subject || (!options.text && !options.html)) {
+        throw new Error("Faltan campos requeridos para enviar el correo");
+    }
 
     const mailOptions = {
         from: `"Assist and Share" <${process.env.EMAIL_USER}>`,
