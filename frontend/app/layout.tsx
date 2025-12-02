@@ -1,22 +1,16 @@
-import Header from '@/app/components/(ui)/Header';
-import './globals.css';
+import { AuthProvider } from "@/app/context/AuthContext"
+import Header from '@/app/components/(ui)/Header'
+import './globals.css'
 
-export const metadata = {
-  title: 'Assist & Share',
-  description: 'Sistema de gestión de eventos',
-};
-
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es">
       <body>
-        <Header />
-        {children}
+        <AuthProvider>
+          <Header />
+          {children}
+        </AuthProvider>
       </body>
     </html>
-  );
+  )
 }

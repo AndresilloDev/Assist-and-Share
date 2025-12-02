@@ -19,7 +19,7 @@ const apiRoutes = [
 ];
 
 const roleBasedRoutes: Record<string, string[]> = {
-  '/admin': ['admin'],
+  '/users': ['admin'],
   '/presenter/dashboard': ['presenter', 'admin'],
   '/events': ['attendee', 'admin', 'presenter'],
   '/my-inscriptions': ['attendee'],
