@@ -47,24 +47,6 @@ export const AssistanceController = {
         }
     },
 
-    // Versión PÚBLICA (para QR)
-    checkInPublic: async (req, res) => {
-        const assistanceId = req.params.assistanceId;
-
-        try {
-            const checkin = await AssistanceService.checkIn(assistanceId);
-
-            // Redirigir a una página de éxito del front
-            return res.redirect(`${process.env.FRONTEND_URL}/checkin-success`);
-        } catch (error) {
-            const msg = encodeURIComponent(error.message || "Error desconocido");
-
-            return res.redirect(
-                `${process.env.FRONTEND_URL}/checkin-error?msg=${msg}`
-            );
-        }
-    },
-
     updateStatus: async (req, res) => {
         const assistanceId = req.params.assistanceId;
         const { status } = req.body;

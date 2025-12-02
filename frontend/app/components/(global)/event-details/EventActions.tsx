@@ -194,7 +194,7 @@ export default function EventActions({
                   isOpen={isQRModalOpen}
                   onClose={() => setIsQRModalOpen(false)}
                   qrUrl={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(
-                    `${process.env.NEXT_PUBLIC_API_URL}/assistance/checkin/${eventData.assistanceId}`
+                    `${process.env.NEXT_PUBLIC_FRONTEND_URL}/checkin?assistanceId=${eventData.assistanceId}`
                   )}`}
                   title={eventData.title}
                 />
