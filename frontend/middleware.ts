@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
 
-const secretStr = process.env.JWT_SECRET || '';
+const secretStr = process.env.JWT_SECRET || 'd72f1dacc1f462f81d9b5e7075884c325ef310d43afd2700a23a3b3643031ebf';
 const secret = new TextEncoder().encode(secretStr);
 
 const publicRoutes = [
@@ -10,6 +10,7 @@ const publicRoutes = [
   '/signup',
   '/forgot-password',
   '/reset-password',
+  '/unauthorized'
 ];
 
 const apiRoutes = [
@@ -19,7 +20,7 @@ const apiRoutes = [
 ];
 
 const roleBasedRoutes: Record<string, string[]> = {
-  '/admin': ['admin'],
+  '/users': ['admin'],
   '/presenter/dashboard': ['presenter', 'admin'],
   '/events': ['attendee', 'admin', 'presenter'],
   '/my-inscriptions': ['attendee'],
@@ -32,27 +33,19 @@ async function verifyToken(token: string) {
     const { payload } = await jwtVerify(token, secret);
     return payload;
   } catch (error: any) {
-    console.error(`[Proxy Error] Token verification failed`);
-    console.error(`[Proxy Error] Error: ${error.message}`);
+    console.error(`[Middleware] Token verification failed: ${error.message}`);
     return null;
   }
 }
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Permitir rutas públicas
   if (publicRoutes.some(route => pathname === route || pathname.startsWith(route))) {
     return NextResponse.next();
   }
-
-  // Permitir rutas de API
-  if (apiRoutes.some(route => pathname.startsWith(route))) {
-    return NextResponse.next();
-  }
-
-  // Permitir assets estáticos
   if (
+    apiRoutes.some(route => pathname.startsWith(route)) ||
     pathname.startsWith('/_next') ||
     pathname.startsWith('/static') ||
     pathname.match(/\.(svg|png|jpg|jpeg|gif|webp|ico)$/)
@@ -62,43 +55,32 @@ export async function proxy(request: NextRequest) {
 
   const token = request.cookies.get('auth-token')?.value;
 
-  // Si no hay token, redirigir a login
   if (!token) {
-    console.log('[Proxy] No token found, redirecting to /login');
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirect', pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  // Verificar token
   const payload = await verifyToken(token);
 
   if (!payload) {
-    console.log('[Proxy] Invalid token detected');
+    console.log('[Middleware] Invalid token. Destroying session.');
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('error', 'session_expired');
 
-    const isInitialNavigation = pathname === '/events' || pathname === '/';
+    const response = NextResponse.redirect(loginUrl);
 
-    if (!isInitialNavigation) {
-      console.log('[Proxy] Clearing invalid token and redirecting');
-      const loginUrl = new URL('/login', request.url);
-      loginUrl.searchParams.set('error', 'session_expired');
+    response.cookies.delete('auth-token');
 
-      const response = NextResponse.redirect(loginUrl);
-      return response;
-    } else {
-      // En navegación inicial, dar una oportunidad más (puede ser timing issue)
-      console.log('[Proxy] Allowing initial navigation despite invalid token');
-      return NextResponse.next();
-    }
+    return response;
   }
 
-  // Verificar permisos de rol
   for (const [route, allowedRoles] of Object.entries(roleBasedRoutes)) {
     if (pathname.startsWith(route)) {
       const userRole = payload.role as string;
       if (!allowedRoles.includes(userRole)) {
-        console.log(`[Proxy] Access denied to ${pathname} for role ${userRole}`);
-        return NextResponse.redirect(new URL('/unauthorized', request.url));
+        console.log(`[Middleware] Access denied for role ${userRole}`);
+        return NextResponse.rewrite(new URL('/unauthorized', request.url));
       }
     }
   }
@@ -108,6 +90,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
 };
