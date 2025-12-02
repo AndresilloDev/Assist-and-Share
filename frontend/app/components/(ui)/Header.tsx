@@ -133,7 +133,7 @@ export default function Header() {
 
                     {/* LOGO */}
                     <Link
-                        href={user?.role === 'admin' ? "/users" : "/events"}
+                        href="/events"
                         className="flex items-center gap-2 group"
                         onClick={() => setIsMobileMenuOpen(false)}
                     >
@@ -145,7 +145,6 @@ export default function Header() {
                     {/* LINKS DESKTOP */}
                     <div className="hidden md:flex md:items-center md:gap-6">
                         {currentLinks.map((link) => {
-                            // Ahora incluimos isCreateEvent en la condición de activo
                             const isActive = pathname === link.href ||
                                 (link.href === '/events' && (isEventDetails || isAttendees || isEventEdit)) ||
                                 (link.href === '/create-event' && isCreateEvent)
@@ -287,158 +286,162 @@ export default function Header() {
             </nav>
 
             {/* --- BREADCRUMB (Event Details / Attendees / Create Event) --- */}
-            {(isEventDetails || isAttendees || isEventEdit || isCreateEvent) && (
-                <div className="w-full border-b border-gray-800 bg-gray-900/2">
-                    <div className="max-w-7xl mx-auto px-4 py-2 text-xs font-medium flex items-center gap-2 text-gray-400">
+            {
+                (isEventDetails || isAttendees || isEventEdit || isCreateEvent) && (
+                    <div className="w-full border-b border-gray-800 bg-gray-900/2">
+                        <div className="max-w-7xl mx-auto px-4 py-2 text-xs font-medium flex items-center gap-2 text-gray-400">
 
-                        {/* 1. Nivel Raíz */}
-                        <Link href="/events" className="hover:text-white transition">
-                            {user?.role === 'presenter' ? 'Ponencias' : 'Eventos'}
-                        </Link>
+                            {/* 1. Nivel Raíz */}
+                            <Link href="/events" className="hover:text-white transition">
+                                {user?.role === 'presenter' ? 'Ponencias' : 'Eventos'}
+                            </Link>
 
-                        <ChevronRight size={14} className="text-gray-600" />
+                            <ChevronRight size={14} className="text-gray-600" />
 
-                        {/* 2. Nivel Intermedio y Final */}
-                        {isAttendees || isEventEdit ? (
-                            <>
-                                <Link
-                                    href={`/event-details/${pathname.split('/').pop()}`}
-                                    className="hover:text-white transition"
-                                >
-                                    Gestión
-                                </Link>
-                                <ChevronRight size={14} className="text-gray-600" />
+                            {/* 2. Nivel Intermedio y Final */}
+                            {isAttendees || isEventEdit ? (
+                                <>
+                                    <Link
+                                        href={`/event-details/${pathname.split('/').pop()}`}
+                                        className="hover:text-white transition"
+                                    >
+                                        Gestión
+                                    </Link>
+                                    <ChevronRight size={14} className="text-gray-600" />
 
+                                    <span className="text-gray-200">
+                                        {isAttendees ? 'Asistentes' : 'Edición'}
+                                    </span>
+                                </>
+                            ) : isCreateEvent ? (
+                                // Si estamos en crear evento
+                                <span className="text-gray-200">Creación</span>
+                            ) : (
+                                // Si estamos en detalles
                                 <span className="text-gray-200">
-                                    {isAttendees ? 'Asistentes' : 'Edición'}
+                                    {user?.role === 'presenter' || user?.role === 'admin' ? 'Gestión' : 'Detalles'}
                                 </span>
-                            </>
-                        ) : isCreateEvent ? (
-                            // Si estamos en crear evento
-                            <span className="text-gray-200">Creación</span>
-                        ) : (
-                            // Si estamos en detalles
-                            <span className="text-gray-200">
-                                {user?.role === 'presenter' || user?.role === 'admin' ? 'Gestión' : 'Detalles'}
-                            </span>
-                        )}
+                            )}
+                        </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* MENU MOBILE OVERLAY */}
-            {isMobileMenuOpen && (
-                <div className="absolute top-16 left-0 w-full bg-gray-950 border-b border-gray-800 md:hidden z-40 animate-in slide-in-from-top-5 duration-200">
-                    <div className="p-4 space-y-2 max-h-[calc(100vh-80px)] overflow-y-auto">
-                        {user && userData && (
-                            <div className="mb-4 pb-4 border-b border-gray-800">
-                                <div className="flex items-center justify-between mb-3">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center font-bold text-blue-400">
-                                            {initials}
+            {
+                isMobileMenuOpen && (
+                    <div className="absolute top-16 left-0 w-full bg-gray-950 border-b border-gray-800 md:hidden z-40 animate-in slide-in-from-top-5 duration-200">
+                        <div className="p-4 space-y-2 max-h-[calc(100vh-80px)] overflow-y-auto">
+                            {user && userData && (
+                                <div className="mb-4 pb-4 border-b border-gray-800">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center font-bold text-blue-400">
+                                                {initials}
+                                            </div>
+                                            <div className="overflow-hidden">
+                                                <div className="text-white font-medium truncate">{fullName}</div>
+                                                <div className="text-xs text-gray-500 truncate">{user.email}</div>
+                                            </div>
                                         </div>
-                                        <div className="overflow-hidden">
-                                            <div className="text-white font-medium truncate">{fullName}</div>
-                                            <div className="text-xs text-gray-500 truncate">{user.email}</div>
-                                        </div>
+                                        {!isEditing && (
+                                            <button
+                                                onClick={() => setIsEditing(true)}
+                                                className="p-2 rounded-lg bg-gray-900 text-gray-400 hover:text-white hover:bg-gray-800 transition"
+                                            >
+                                                <Edit2 size={18} />
+                                            </button>
+                                        )}
                                     </div>
-                                    {!isEditing && (
-                                        <button
-                                            onClick={() => setIsEditing(true)}
-                                            className="p-2 rounded-lg bg-gray-900 text-gray-400 hover:text-white hover:bg-gray-800 transition"
-                                        >
-                                            <Edit2 size={18} />
-                                        </button>
+
+                                    {isEditing ? (
+                                        <div className="space-y-3 mt-4 bg-gray-900/50 p-3 rounded-xl border border-gray-800">
+                                            {msg && (
+                                                <div className={`text-xs p-2 rounded flex items-center gap-2 ${msg.type === 'success' ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400'}`}>
+                                                    {msg.type === 'success' ? <CheckCircle size={12} /> : <XCircle size={12} />} {msg.text}
+                                                </div>
+                                            )}
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] uppercase text-gray-500 font-bold">Nombre</label>
+                                                <input
+                                                    value={formData.first_name}
+                                                    onChange={e => setFormData({ ...formData, first_name: e.target.value })}
+                                                    className="w-full bg-gray-950 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
+                                                />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] uppercase text-gray-500 font-bold">Apellido</label>
+                                                <input
+                                                    value={formData.last_name}
+                                                    onChange={e => setFormData({ ...formData, last_name: e.target.value })}
+                                                    className="w-full bg-gray-950 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
+                                                />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] uppercase text-gray-500 font-bold">Especialidad</label>
+                                                <input
+                                                    value={formData.speciality}
+                                                    onChange={e => setFormData({ ...formData, speciality: e.target.value })}
+                                                    className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
+                                                />
+                                            </div>
+                                            <div className="flex gap-2 pt-2">
+                                                <button onClick={handleSave} disabled={isLoading} className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2 rounded-lg text-sm font-medium">
+                                                    {isLoading ? '...' : 'Guardar'}
+                                                </button>
+                                                <button onClick={() => setIsEditing(false)} className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm font-medium">
+                                                    Cancelar
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="pl-14">
+                                            <span className="inline-block px-2 py-1 rounded text-xs font-medium bg-gray-900 text-gray-400 border border-gray-800">
+                                                {userData.speciality || "Sin especialidad"}
+                                            </span>
+                                        </div>
                                     )}
                                 </div>
+                            )}
 
-                                {isEditing ? (
-                                    <div className="space-y-3 mt-4 bg-gray-900/50 p-3 rounded-xl border border-gray-800">
-                                        {msg && (
-                                            <div className={`text-xs p-2 rounded flex items-center gap-2 ${msg.type === 'success' ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400'}`}>
-                                                {msg.type === 'success' ? <CheckCircle size={12} /> : <XCircle size={12} />} {msg.text}
-                                            </div>
-                                        )}
-                                        <div className="space-y-1">
-                                            <label className="text-[10px] uppercase text-gray-500 font-bold">Nombre</label>
-                                            <input
-                                                value={formData.first_name}
-                                                onChange={e => setFormData({ ...formData, first_name: e.target.value })}
-                                                className="w-full bg-gray-950 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
-                                            />
-                                        </div>
-                                        <div className="space-y-1">
-                                            <label className="text-[10px] uppercase text-gray-500 font-bold">Apellido</label>
-                                            <input
-                                                value={formData.last_name}
-                                                onChange={e => setFormData({ ...formData, last_name: e.target.value })}
-                                                className="w-full bg-gray-950 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
-                                            />
-                                        </div>
-                                        <div className="space-y-1">
-                                            <label className="text-[10px] uppercase text-gray-500 font-bold">Especialidad</label>
-                                            <input
-                                                value={formData.speciality}
-                                                onChange={e => setFormData({ ...formData, speciality: e.target.value })}
-                                                className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
-                                            />
-                                        </div>
-                                        <div className="flex gap-2 pt-2">
-                                            <button onClick={handleSave} disabled={isLoading} className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2 rounded-lg text-sm font-medium">
-                                                {isLoading ? '...' : 'Guardar'}
-                                            </button>
-                                            <button onClick={() => setIsEditing(false)} className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm font-medium">
-                                                Cancelar
-                                            </button>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="pl-14">
-                                        <span className="inline-block px-2 py-1 rounded text-xs font-medium bg-gray-900 text-gray-400 border border-gray-800">
-                                            {userData.speciality || "Sin especialidad"}
-                                        </span>
-                                    </div>
-                                )}
-                            </div>
-                        )}
+                            {currentLinks.map((link) => {
+                                // Activo también en mobile
+                                const isActive = pathname === link.href ||
+                                    (link.href === '/events' && (isEventDetails || isAttendees || isEventEdit)) ||
+                                    (link.href === '/create-event' && isCreateEvent)
 
-                        {currentLinks.map((link) => {
-                            // Activo también en mobile
-                            const isActive = pathname === link.href ||
-                                (link.href === '/events' && (isEventDetails || isAttendees || isEventEdit)) ||
-                                (link.href === '/create-event' && isCreateEvent)
+                                return (
+                                    <Link
+                                        key={link.href}
+                                        href={link.href}
+                                        className={`block px-4 py-3 rounded-lg text-sm font-medium ${isActive ? 'bg-gray-800 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-900'
+                                            }`}
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                    >
+                                        {link.label}
+                                    </Link>
+                                )
+                            })}
 
-                            return (
+                            {!user && (
                                 <Link
-                                    key={link.href}
-                                    href={link.href}
-                                    className={`block px-4 py-3 rounded-lg text-sm font-medium ${isActive ? 'bg-gray-800 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-900'
-                                        }`}
+                                    href="/login"
+                                    className="block w-full text-center px-4 py-3 mt-4 rounded-lg bg-white text-black font-medium"
                                     onClick={() => setIsMobileMenuOpen(false)}
                                 >
-                                    {link.label}
+                                    Iniciar Sesión
                                 </Link>
-                            )
-                        })}
+                            )}
 
-                        {!user && (
-                            <Link
-                                href="/login"
-                                className="block w-full text-center px-4 py-3 mt-4 rounded-lg bg-white text-black font-medium"
-                                onClick={() => setIsMobileMenuOpen(false)}
-                            >
-                                Iniciar Sesión
-                            </Link>
-                        )}
-
-                        {user && (
-                            <div className="pt-2">
-                                <LogoutButton />
-                            </div>
-                        )}
+                            {user && (
+                                <div className="pt-2">
+                                    <LogoutButton />
+                                </div>
+                            )}
+                        </div>
                     </div>
-                </div>
-            )}
-        </header>
+                )
+            }
+        </header >
     )
 }

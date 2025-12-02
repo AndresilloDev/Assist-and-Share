@@ -1,6 +1,6 @@
 "use client"
 
-import { Calendar, MapPin, User, GraduationCap, Users, Radio, Timer, Clock } from 'lucide-react'
+import { Calendar, MapPin, User, GraduationCap, Users, Timer, Clock } from 'lucide-react'
 import InfoCard from "@/app/components/(ui)/InfoCard"
 
 interface Event {
@@ -49,7 +49,6 @@ export default function EventInfo({ event, presenterName }: EventInfoProps) {
 
 
   const isInProgress = nowMs >= startTimeMs && nowMs < endTimeMs
-  const isFinished = nowMs >= endTimeMs
 
   const dateFormatted = startDate.toLocaleDateString("es-MX", {
     weekday: "short",
@@ -67,7 +66,7 @@ export default function EventInfo({ event, presenterName }: EventInfoProps) {
     <div className="space-y-6">
 
       <div className="flex items-center gap-3 flex-wrap">
-        <h1 className="text-4xl font-bold leading-tight">{event.title}</h1>
+        <h1 className="text-3xl md:text-4xl font-bold leading-tight">{event.title}</h1>
 
         <span
           className={`px-3 py-1 rounded-md text-md font-semibold border border-transparent ${EVENT_TYPE_COLORS[event.type]}`}
@@ -86,27 +85,71 @@ export default function EventInfo({ event, presenterName }: EventInfoProps) {
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      {/* ESTRATEGIA DE OPTIMIZACIÓN:
+          - Usamos un solo contenedor grid.
+          - grid-cols-2: Por defecto (Móvil) son 2 columnas.
+          - md:grid-cols-4: En escritorio expandimos a 4 o ajustamos según diseño.
+          
+          Controlamos el tamaño con col-span:
+          - col-span-1: Ocupa mitad de pantalla en móvil (ideal para Fecha, Hora, Duración).
+          - col-span-2: Ocupa ancho completo en móvil (ideal para Ubicación, Ponente).
+      */}
+      <div className="grid grid-cols-2 md:grid-cols-2 gap-3 md:gap-4">
 
-        <div className="space-y-3">
-          <InfoCard
-            icon={<Calendar className="text-blue-400 flex-shrink-0" size={20} />}
-            label="Fecha"
-            text={`${dateFormatted}`}
-          />
-
+        {/* --- FILA 1: FECHA Y HORA (Lado a lado en móvil) --- */}
+        <div className="col-span-1s">
           <InfoCard
             icon={<GraduationCap className="text-blue-400 flex-shrink-0" size={20} />}
             label="Modalidad"
             text={Modalities[event.modality]}
           />
+        </div>
 
+        <div className="col-span-1">
+          <InfoCard
+            icon={<Clock className="text-blue-400 flex-shrink-0" size={20} />}
+            label="Hora"
+            text={`${hourFormatted}`}
+          />
+        </div>
+
+        {/* --- FILA 2: DURACIÓN Y CAPACIDAD (Lado a lado en móvil) --- */}
+        <div className="col-span-1">
+          <InfoCard
+            icon={<Timer className="text-blue-400 flex-shrink-0" size={20} />}
+            label="Duración"
+            text={`${event.duration} min`}
+          />
+        </div>
+
+        <div className="col-span-1">
+          <InfoCard
+            icon={<Users className="text-blue-400 flex-shrink-0" size={20} />}
+            label="Capacidad"
+            text={`${event.capacity} pers.`}
+          />
+        </div>
+
+        {/* --- FILA 3: MODALIDAD Y PONENTE --- */}
+        <div className="col-span-2 md:col-span-1">
+          <InfoCard
+            icon={<Calendar className="text-blue-400 flex-shrink-0" size={20} />}
+            label="Fecha"
+            text={`${dateFormatted}`}
+          />
+        </div>
+
+        {/* Ponente: Ancho completo en móvil porque los nombres pueden ser largos */}
+        <div className="col-span-2 md:col-span-1">
           <InfoCard
             icon={<User className="text-blue-400 flex-shrink-0" size={20} />}
             label="Ponente"
             text={presenterName}
           />
+        </div>
 
+        {/* --- FILA 4: UBICACIÓN (Siempre ancho completo) --- */}
+        <div className="col-span-2">
           <InfoCard
             icon={<MapPin className="text-blue-400 flex-shrink-0" size={20} />}
             label={event.modality === "online" ? "Enlace" : "Ubicación"}
@@ -116,30 +159,6 @@ export default function EventInfo({ event, presenterName }: EventInfoProps) {
                 : event.location || "Ubicación no especificada"
             }
           />
-        </div>
-
-        <div className="space-y-3">
-
-          <InfoCard
-            icon={<Clock className="text-blue-400 flex-shrink-0" size={20} />}
-            label="Hora"
-            text={`${hourFormatted}`}
-          />
-
-
-
-          <InfoCard
-            icon={<Users className="text-blue-400 flex-shrink-0" size={20} />}
-            label="Capacidad"
-            text={`${event.capacity} Asistentes`}
-          />
-
-          <InfoCard
-            icon={<Timer className="text-blue-400 flex-shrink-0" size={20} />}
-            label="Duración"
-            text={`${event.duration} minutos`}
-          />
-
         </div>
 
       </div>

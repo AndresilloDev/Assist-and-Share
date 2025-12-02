@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, DragEvent } from "react"
-import { ListChecks, CheckCircle2, Edit3, GripVertical, Trash2, Plus, X } from "lucide-react"
+import { CheckCircle2, Edit3, GripVertical, Trash2, X } from "lucide-react"
 import { QuizQuestion } from "./types"
 
 interface EventFeedbackProps {
@@ -113,7 +113,10 @@ export default function EventFeedback({
                 Opciones de Retroalimentación
             </h2>
 
-            {/* Selector de Tarjetas */}
+            {/* Selector de Tarjetas - GRID RESPONSIVO 
+                grid-cols-1: 1 columna en móvil (default)
+                md:grid-cols-2: 2 columnas en tablet/desktop (min-width: 768px)
+            */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div
                     onClick={() => { setUseGenericQuiz(true); setQuestions([]); setQuizError("") }}
@@ -122,7 +125,7 @@ export default function EventFeedback({
                         : "bg-gray-900/40 border-gray-800 hover:bg-gray-800/60 hover:border-gray-700"
                         }`}
                 >
-                    <div className={`p-3 rounded-full ${useGenericQuiz ? "bg-blue-500 text-white" : "bg-gray-800 text-gray-400"}`}>
+                    <div className={`p-3 rounded-full flex-shrink-0 ${useGenericQuiz ? "bg-blue-500 text-white" : "bg-gray-800 text-gray-400"}`}>
                         <CheckCircle2 size={24} />
                     </div>
                     <div>
@@ -143,7 +146,7 @@ export default function EventFeedback({
                         : "bg-gray-900/40 border-gray-800 hover:bg-gray-800/60 hover:border-gray-700"
                         }`}
                 >
-                    <div className={`p-3 rounded-full ${!useGenericQuiz ? "bg-blue-500 text-white" : "bg-gray-800 text-gray-400"}`}>
+                    <div className={`p-3 rounded-full flex-shrink-0 ${!useGenericQuiz ? "bg-blue-500 text-white" : "bg-gray-800 text-gray-400"}`}>
                         <Edit3 size={24} />
                     </div>
                     <div>
@@ -161,7 +164,7 @@ export default function EventFeedback({
             {/* Área de Preguntas */}
             {!useGenericQuiz && (
                 <div className="animate-in fade-in slide-in-from-top-4 duration-300">
-                    <div className="bg-gray-900/30 rounded-xl p-6 border border-gray-800/50">
+                    <div className="bg-gray-900/30 rounded-xl p-4 md:p-6 border border-gray-800/50">
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">
                                 Preguntas del Cuestionario
@@ -186,12 +189,13 @@ export default function EventFeedback({
                                     onDragEnter={(e) => handleDragEnter(e, index)}
                                     onDragEnd={handleDragEnd}
                                     onDragOver={(e) => e.preventDefault()}
-                                    className={`group flex items-center gap-3 bg-gray-900 p-3 rounded-xl border transition-all duration-200 ${isDragging && dragItem.current === index
+                                    // Se ajustó el padding y gap para móviles (p-2 gap-2) vs escritorio (md:p-3 md:gap-3)
+                                    className={`group flex items-center gap-2 md:gap-3 bg-gray-900 p-2 md:p-3 rounded-xl border transition-all duration-200 ${isDragging && dragItem.current === index
                                         ? 'opacity-50 border-blue-500 border-dashed scale-[0.98]'
                                         : 'border-gray-700 hover:border-gray-600 shadow-sm'
                                         }`}
                                 >
-                                    <div className="cursor-grab active:cursor-grabbing text-gray-600 hover:text-gray-300 p-1 transition-colors">
+                                    <div className="cursor-grab active:cursor-grabbing text-gray-600 hover:text-gray-300 p-1 transition-colors flex-shrink-0">
                                         <GripVertical size={20} />
                                     </div>
 
@@ -204,15 +208,16 @@ export default function EventFeedback({
                                         value={q.text}
                                         onChange={(e) => handleUpdateQuestion(q.tempId, e.target.value)}
                                         onBlur={() => validateQuiz()}
-                                        placeholder={`Escribe la pregunta #${index + 1}...`}
-                                        className="flex-grow bg-transparent border-none text-white placeholder-gray-600 focus:ring-0 text-base px-2 py-1"
+                                        placeholder={`Pregunta #${index + 1}...`}
+                                        // Ajuste de tamaño de fuente para evitar zoom en iOS (text-base)
+                                        className="flex-grow bg-transparent border-none text-white placeholder-gray-600 focus:ring-0 text-base px-2 py-1 min-w-0"
                                         autoFocus={q.text === ""}
                                     />
 
                                     <button
                                         type="button"
                                         onClick={() => handleRemoveQuestion(q.tempId)}
-                                        className="p-2 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
+                                        className="p-2 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer flex-shrink-0"
                                     >
                                         <Trash2 size={18} />
                                     </button>
@@ -225,7 +230,7 @@ export default function EventFeedback({
                             onClick={handleAddQuestion}
                             className="mt-6 w-full py-4 bg-gray-800 hover:bg-gray-750 border border-gray-700 hover:border-gray-600 text-white rounded-xl transition-all duration-200 flex items-center justify-center gap-2 font-semibold shadow-sm hover:shadow-md cursor-pointer group"
                         >
-                            Agregar nueva pregunta
+                            <span className="text-xl font-light">+</span> Agregar nueva pregunta
                         </button>
 
                         {quizError && (

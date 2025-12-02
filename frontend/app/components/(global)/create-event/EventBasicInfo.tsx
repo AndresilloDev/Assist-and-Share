@@ -28,7 +28,9 @@ export default function EventBasicInfo({
                 Información Básica
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="col-span-2">
+
+                {/* CAMBIO AQUÍ: col-span-1 por defecto, md:col-span-2 en escritorio */}
+                <div className="col-span-1 md:col-span-2">
                     <label className="block text-sm text-gray-400 mb-1">Título del Evento</label>
                     <input
                         type="text"
@@ -41,7 +43,8 @@ export default function EventBasicInfo({
                     />
                 </div>
 
-                <div className="relative z-20">
+                {/* Estos divs no necesitan cambios, ocuparán 1 columna por defecto */}
+                <div className="relative z-22">
                     <label className="block text-sm text-gray-400 mb-1">Tipo de Evento</label>
                     <CustomSelect
                         value={formData.type}
@@ -61,7 +64,8 @@ export default function EventBasicInfo({
                     />
                 </div>
 
-                <div className="col-span-2">
+                {/* CAMBIO AQUÍ: Igual que el título, col-span-1 en móvil, 2 en escritorio */}
+                <div className="col-span-1 md:col-span-2">
                     <label className="block text-sm text-gray-400 mb-1">Descripción</label>
                     <textarea
                         name="description"

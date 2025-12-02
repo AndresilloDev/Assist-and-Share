@@ -77,7 +77,8 @@ export default function EventLogistics({
                 </div>
 
                 {(formData.modality === 'in-person' || formData.modality === 'hybrid') && (
-                    <div className="col-span-2">
+                    // CAMBIO AQUÍ: Se adapta a 1 columna en móvil y 2 en escritorio
+                    <div className="col-span-1 md:col-span-2">
                         <label className="block text-sm text-gray-400 mb-1 flex items-center gap-1"><MapPin size={14} /> Ubicación Física</label>
                         <input
                             type="text"
@@ -91,7 +92,8 @@ export default function EventLogistics({
                 )}
 
                 {(formData.modality === 'online' || formData.modality === 'hybrid') && (
-                    <div className="col-span-2">
+                    // CAMBIO AQUÍ: Se adapta a 1 columna en móvil y 2 en escritorio
+                    <div className="col-span-1 md:col-span-2">
                         <label className="block text-sm text-gray-400 mb-1 flex items-center gap-1"><LinkIcon size={14} /> Enlace de Reunión</label>
                         <input
                             type="url"
