@@ -19,7 +19,7 @@ export const ResponseController = {
 
             const surveyId = req.params.surveyId;
 
-            const userId = req.session.user.id;
+            const userId = req.user.id;
 
             const newResponse = await ResponseService.createResponse(surveyId, userId, answers, comment);
 
@@ -49,7 +49,7 @@ export const ResponseController = {
         try {
             const surveyId = req.params.surveyId;
 
-            const userId = req.session.user.id;
+            const userId = req.user.id;
 
             const response = await ResponseService.getMyResponse(surveyId, userId);
             return ApiResponse.success(res, {
@@ -65,7 +65,7 @@ export const ResponseController = {
         try {
             const { surveyId, responseId } = req.params;
 
-            const userId = req.session.user.id;
+            const userId = req.user.id;
 
             const data = req.body;
             const updatedResponse = await ResponseService.updateResponse(surveyId, responseId, userId, data);

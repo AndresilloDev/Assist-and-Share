@@ -5,7 +5,7 @@ import { AssistanceService } from "./assistance.service.js";
 export const AssistanceController = {
     createAssistance: async (req, res) => {
         const eventId = req.params.eventId;
-        const userId = req.session.user.id;
+        const userId = req.user.id;
 
         try {
             const newAssistance = await AssistanceService.createAssistance(eventId, userId);
@@ -20,7 +20,7 @@ export const AssistanceController = {
 
     cancelAssistance: async (req, res) => {
         const assistanceId = req.params.assistanceId;
-        const userId = req.session.user.id;
+        const userId = req.user.id;
 
         try {
             const cancelledAssistance = await AssistanceService.cancelAssistance(assistanceId, userId);
@@ -96,7 +96,7 @@ export const AssistanceController = {
     },
 
     getMyAssistances: async (req, res) => {
-        const userId = req.session.user.id;
+        const userId = req.user.id;
 
         try {
             const assistances = await AssistanceService.getByUser(userId);

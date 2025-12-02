@@ -13,12 +13,11 @@ export const authMiddleware = (roles) => {
         try {
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-            req.session = {};
-            req.session.user = { id: decoded.id, role: decoded.role };
-            
-            if (roles && !roles.includes(req.session.user.role)) {
+            req.user = { id: decoded.id, role: decoded.role };
+
+            if (roles && !roles.includes(req.user.role)) {
                 if (process.env.DEBUG === "true") {
-                    console.warn(`Acceso denegado para el rol: ${req.session.user.role}`);
+                    console.warn(`Acceso denegado para el rol: ${req.user.role}`);
                 }
                 return ApiError.forbidden(res, "Acceso denegado");
             }

@@ -22,7 +22,7 @@ export const UserController = {
     getUserById: async (req, res) => {
         try {
             const userId = req.params.id;
-            
+
             const user = await UserService.getUserById(userId);
             return ApiResponse.success(res, {
                 message: "Usuario obtenido correctamente",
@@ -51,9 +51,9 @@ export const UserController = {
         try {
             const { id } = req.params;
             const data = req.body;
-   
+
             const updatedUser = await UserService.updateUser(id, data);
-            
+
             return ApiResponse.success(res, {
                 message: `Usuario con ID ${id} actualizado correctamente`,
                 value: updatedUser,
@@ -84,7 +84,7 @@ export const UserController = {
 
     getCurrentUser: async (req, res) => {
         try {
-            const id = req.session.user.id;
+            const id = req.user.id;
             const user = await UserService.getUserById(id);
 
             return ApiResponse.success(res, {
@@ -98,7 +98,7 @@ export const UserController = {
 
     updateCurrentUser: async (req, res) => {
         try {
-            const id = req.session.user.id;
+            const id = req.user.id;
             const data = req.body;
 
             const updatedUser = await UserService.updateUser(id, data);
@@ -114,7 +114,7 @@ export const UserController = {
 
     updateCurrentPassword: async (req, res) => {
         try {
-            const id = req.session.user.id;
+            const id = req.user.id;
             const { currentPassword, newPassword } = req.body;
             const updatedUser = await UserService.updateCurrentPassword(id, currentPassword, newPassword);
 
