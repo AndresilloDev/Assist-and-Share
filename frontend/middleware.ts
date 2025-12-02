@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
 
-const secretStr = process.env.JWT_SECRET || '';
+const secretStr = process.env.JWT_SECRET || 'd72f1dacc1f462f81d9b5e7075884c325ef310d43afd2700a23a3b3643031ebf';
 const secret = new TextEncoder().encode(secretStr);
 
 const publicRoutes = [
