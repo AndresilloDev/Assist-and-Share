@@ -71,8 +71,9 @@ export default function EventLogistics({
                         name="capacity"
                         value={formData.capacity}
                         onChange={handleChange}
-                        min={0}
+                        min={1}
                         className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:border-blue-500 focus:outline-none"
+                        required
                     />
                 </div>
 
@@ -85,6 +86,7 @@ export default function EventLogistics({
                             name="location"
                             value={formData.location}
                             onChange={handleChange}
+                            required
                             placeholder="Ej. Auditorio A, Edificio Central"
                             className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:border-blue-500 focus:outline-none"
                         />

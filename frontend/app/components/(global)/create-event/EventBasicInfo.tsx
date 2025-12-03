@@ -69,6 +69,7 @@ export default function EventBasicInfo({
                     <label className="block text-sm text-gray-400 mb-1">Descripción</label>
                     <textarea
                         name="description"
+                        required
                         value={formData.description}
                         onChange={handleChange}
                         rows={4}
