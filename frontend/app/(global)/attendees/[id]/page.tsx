@@ -195,7 +195,7 @@ export default function EventAttendeesPage() {
                                                     </div>
                                                     <div>
                                                         <div className="font-medium text-white text-base">
-                                                            {att.user?.first_name?.[0] || "?"} {att.user?.last_name?.[0] || "?"}
+                                                            {att.user?.first_name || "?"} {att.user?.last_name || "?"}
                                                         </div>
                                                         <div className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
                                                             <Clock size={10} />
