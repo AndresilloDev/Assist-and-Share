@@ -7,12 +7,9 @@ export const AssistanceService = {
         try {
             const event = await Event.findById(eventId);
             if (!event) {
-                throw new ApiError.notFound("Evento no encontrado");
+                // CORREGIDO: Quitado 'new'
+                throw ApiError.notFound("Evento no encontrado");
             }
-
-            // if (event.date < new Date()) {
-            //     throw new ApiError.badRequest("No se puede registrar a un evento que ya ocurrió");
-            // }
 
             const exists = await Assistance.findOne({
                 event: eventId,
@@ -21,7 +18,8 @@ export const AssistanceService = {
             });
 
             if (exists && exists.status !== "cancelled") {
-                throw new ApiError.badRequest("Ya tienes una asistencia registrada para este evento");
+                // CORREGIDO: Quitado 'new'
+                throw ApiError.badRequest("Ya tienes una asistencia registrada para este evento");
             } else if (exists && exists.status === "cancelled") {
                 exists.status = "pending";
                 await exists.save();
@@ -35,7 +33,8 @@ export const AssistanceService = {
                 });
 
                 if (activeCount >= event.capacity) {
-                    throw new ApiError.badRequest("La capacidad del evento ha sido alcanzada");
+                    // CORREGIDO: Quitado 'new' (Aquí fallaba tu log)
+                    throw ApiError.badRequest("La capacidad del evento ha sido alcanzada");
                 }
             }
 
@@ -54,20 +53,24 @@ export const AssistanceService = {
         try {
             const assistance = await Assistance.findById(assistanceId);
             if (!assistance) {
-                throw new ApiError.notFound("Asistencia no encontrada");
+                // CORREGIDO
+                throw ApiError.notFound("Asistencia no encontrada");
             }
 
             switch (assistance.status) {
                 case "attended":
-                    throw new ApiError.badRequest("Ya se asistió a este evento, no se puede cancelar la asistencia");
+                    // CORREGIDO
+                    throw ApiError.badRequest("Ya se asistió a este evento, no se puede cancelar la asistencia");
                 case "cancelled":
-                    throw new ApiError.badRequest("La asistencia ya está cancelada");
+                    // CORREGIDO
+                    throw ApiError.badRequest("La asistencia ya está cancelada");
                 default:
                     break;
             }
 
             if (assistance.user.toString() !== userId) {
-                throw new ApiError.forbidden("No tienes permiso para cancelar esta asistencia");
+                // CORREGIDO
+                throw ApiError.forbidden("No tienes permiso para cancelar esta asistencia");
             }
             assistance.status = "cancelled";
             await assistance.save();
@@ -79,7 +82,8 @@ export const AssistanceService = {
 
     checkIn: async (assistanceId) => {
         const assistance = await Assistance.findById(assistanceId);
-        if (!assistance) throw new ApiError.notFound("Asistencia no encontrada");
+        // CORREGIDO
+        if (!assistance) throw ApiError.notFound("Asistencia no encontrada");
 
         assistance.status = "attended";
         assistance.checkInTime = new Date();
@@ -92,14 +96,17 @@ export const AssistanceService = {
         try {
             const assistance = await Assistance.findById(assistanceId);
             if (!assistance) {
-                throw new ApiError.notFound("Asistencia no encontrada");
+                // CORREGIDO
+                throw ApiError.notFound("Asistencia no encontrada");
             }
 
             switch (assistance.status) {
                 case "attended":
-                    throw new ApiError.badRequest("Ya se asistió a este evento, no se puede cambiar el estado");
+                    // CORREGIDO
+                    throw ApiError.badRequest("Ya se asistió a este evento, no se puede cambiar el estado");
                 case "cancelled":
-                    throw new ApiError.badRequest("La asistencia está cancelada, no se puede cambiar el estado");
+                    // CORREGIDO
+                    throw ApiError.badRequest("La asistencia está cancelada, no se puede cambiar el estado");
                 default:
                     break;
             }

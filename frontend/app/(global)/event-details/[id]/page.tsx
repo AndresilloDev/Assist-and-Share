@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { toast, Toaster } from 'sonner';
 import { useParams } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
 import api from "@/lib/api"
@@ -181,11 +182,15 @@ export default function EventDetail() {
   }
 
   const handleEnroll = async () => {
+    const toastId = toast.loading("Inscribiéndose...");
+
     try {
       await api.post(`/assistance/${id}`)
       await fetchUserAssistance()
+      toast.success("¡Te has inscrito correctamente!", { id: toastId });
     } catch (err: any) {
-      setError(err.response?.data?.message || "Error al inscribirse")
+      const msg = err.response?.data?.message || "Error al inscribirse"
+      toast.error(msg, { id: toastId });
     }
   }
 
@@ -302,6 +307,7 @@ export default function EventDetail() {
           isLoading={isCancelling}
         />
       </div>
+      <Toaster richColors position="top-center" />
     </div>
   )
 }
