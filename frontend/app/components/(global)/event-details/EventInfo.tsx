@@ -1,6 +1,6 @@
 "use client"
 
-import { Calendar, MapPin, User, GraduationCap, Users, Timer, Clock } from 'lucide-react'
+import { Calendar, MapPin, User, GraduationCap, Users, Timer, Clock, Link } from 'lucide-react'
 import InfoCard from "@/app/components/(ui)/InfoCard"
 
 interface Event {
@@ -160,6 +160,17 @@ export default function EventInfo({ event, presenterName }: EventInfoProps) {
             }
           />
         </div>
+
+        <div className="col-span-2">
+          {event.link && (event.modality !== "in-person") && (
+            <InfoCard
+              icon={<Link className="text-blue-400 flex-shrink-0" size={20} />}
+              label="Enlace"
+              text={event.link || "Enlace no especificado"}
+            />
+          )}
+        </div>
+
 
       </div>
     </div>
