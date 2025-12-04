@@ -270,7 +270,7 @@ export default function UsersPage() {
                                     <div key={u._id} className="bg-[#0B1121] border border-gray-800 rounded-xl p-5 flex flex-col gap-4 shadow-lg">
                                         <div className="flex justify-between items-start gap-3">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center text-lg font-bold text-blue-400 border border-gray-700 shadow-inner">{u.first_name[0]}{u.last_name[0]}</div>
+                                                <div className="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center text-lg font-bold text-blue-400 border border-gray-700 shadow-inner">{u.first_name[0]}{u?.last_name?.[0]}</div>
                                                 <div><div className="font-bold text-white text-lg">{u.first_name} {u.last_name}</div>{getRoleBadge(u.role)}</div>
                                             </div>
                                         </div>
@@ -316,7 +316,7 @@ export default function UsersPage() {
 
                                         return (
                                             <tr key={u._id} className="hover:bg-white/5 transition-colors group">
-                                                <td className="p-4"><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-sm font-bold text-blue-400 border border-gray-700">{u.first_name[0]}{u.last_name[0]}</div><div><div className="font-medium text-white">{u.first_name} {u.last_name}</div><div className="text-xs text-gray-500 flex items-center gap-1 hover:cursor-pointer"><Mail size={10} /> {u.email}</div></div></div></td>
+                                                <td className="p-4"><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-sm font-bold text-blue-400 border border-gray-700">{u.first_name[0]}{u?.last_name?.[0]}</div><div><div className="font-medium text-white">{u.first_name} {u.last_name}</div><div className="text-xs text-gray-500 flex items-center gap-1 hover:cursor-pointer"><Mail size={10} /> {u.email}</div></div></div></td>
                                                 <td className="p-4">{getRoleBadge(u.role)}</td>
                                                 <td className="p-4 text-sm text-gray-400">{u.speciality || "-"}</td>
                                                 <td className="p-4 text-right">
