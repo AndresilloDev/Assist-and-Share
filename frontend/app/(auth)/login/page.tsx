@@ -60,14 +60,16 @@ function LoginForm() {
 
       await checkAuth();
 
-      setTimeout(() => router.push("/events"), 100);
+      router.refresh();
+
+      router.replace("/events");
+
     } catch (err) {
       const message = err instanceof AxiosError
         ? err.response?.data?.message || "Error del servidor"
         : err instanceof Error
           ? err.message
           : "Error al iniciar sesión";
-
       setError(message);
     } finally {
       setLoading(false);
