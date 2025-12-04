@@ -3,7 +3,7 @@ export const updateEventHtml = (event) => {
         <h2>Actualización del evento: <strong>${event.title}</strong></h2>
         <p>Queremos informarte que uno de los eventos al que estás inscrito ha sido actualizado. Te compartimos los detalles más recientes:</p>
 
-        <p><strong>Fecha:</strong> ${new Date(event.date).toLocaleString()}</p>
+        <p><strong>Fecha:</strong> ${new Date(event.date).toLocaleString("es-MX", { timeZone: "America/Mexico_City" })}</p>
         <p><strong>Duración:</strong> ${event.duration} minutos</p>
         <p><strong>Modalidad:</strong> ${event.modality}</p>
         <p><strong>Tipo de evento:</strong> ${event.type}</p>
@@ -24,7 +24,7 @@ export const deleteEventHtml = (event) => {
         <p>Lamentamos informarte que el evento al que estabas inscrito ha sido eliminado de la plataforma.</p>
 
         <p><strong>Tipo de evento:</strong> ${event.type}</p>
-        <p><strong>Fecha programada originalmente:</strong> ${new Date(event.date).toLocaleString()}</p>
+        <p><strong>Fecha programada originalmente:</strong> ${new Date(event.date).toLocaleString("es-MX", { timeZone: "America/Mexico_City" })}</p>
 
         <p style="margin-top: 20px;">
             Te invitamos a revisar la plataforma para explorar otros eventos disponibles que puedan interesarte. 
@@ -52,7 +52,7 @@ export const completeEventHtml = (event) => {
 
         <p>Gracias por haber formado parte de este evento. A continuación te dejamos un resumen:</p>
 
-        <p><strong>Fecha:</strong> ${new Date(event.date).toLocaleString()}</p>
+        <p><strong>Fecha:</strong> ${new Date(event.date).toLocaleString("es-MX", { timeZone: "America/Mexico_City" })}</p>
         <p><strong>Duración:</strong> ${event.duration} minutos</p>
         <p><strong>Modalidad:</strong> ${event.modality}</p>
 
