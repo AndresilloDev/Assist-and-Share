@@ -56,13 +56,16 @@ function LoginForm() {
         throw new Error("No se recibió el token de autenticación");
       }
 
-      document.cookie = `auth-token=${data.value.token}; path=/; max-age=${60 * 60 * 24 * 30}; samesite=lax`;
+      // CORRECCIÓN 1: Añadir 'Secure' para que funcione en móviles/HTTPS
+      // Nota: En localhost (http) 'Secure' no estorba, pero en producción es obligatorio.
+      document.cookie = `auth-token=${data.value.token}; path=/; max-age=${60 * 60 * 24 * 30}; samesite=lax; Secure`;
 
       await checkAuth();
 
-      router.refresh();
-
-      router.replace("/events");
+      // CORRECCIÓN 2: Hard Redirect
+      // En lugar de router.refresh() y router.push(), forzamos al navegador
+      // a cargar la página desde cero. Esto elimina cualquier caché fantasma del móvil.
+      window.location.href = "/events";
 
     } catch (err) {
       const message = err instanceof AxiosError
@@ -70,10 +73,11 @@ function LoginForm() {
         : err instanceof Error
           ? err.message
           : "Error al iniciar sesión";
+
       setError(message);
-    } finally {
-      setLoading(false);
+      setLoading(false); // Solo quitamos loading si falla. Si va bien, dejamos que cargue la nueva página.
     }
+    // Nota: Deje los comentarios de chat pq solo el y dios saben como funciona el cache segun x navegadores
   };
 
   const handleGoogleLogin = () => {
