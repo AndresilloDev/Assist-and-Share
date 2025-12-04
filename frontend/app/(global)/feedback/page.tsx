@@ -224,7 +224,7 @@ export default function FeedbackPage() {
                     <h1 className="text-3xl md:text-5xl font-bold mb-6">Resultados de Retroalimentación</h1>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <div className="relative z-20">
+                        <div className="relative z-19">
                             <label className="block text-sm text-gray-400 mb-2 font-medium">Selecciona una ponencia finalizada:</label>
                             <CustomSelect
                                 value={selectedEventId}
