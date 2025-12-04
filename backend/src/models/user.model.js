@@ -19,7 +19,6 @@ const userSchema = new mongoose.Schema({
     last_name: {
         type: String,
         trim: true,
-        required: [true, "El apellido es obligatorio"],
     },
     password: {
         type: String,
