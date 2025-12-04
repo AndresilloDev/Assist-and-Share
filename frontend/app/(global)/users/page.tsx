@@ -99,7 +99,7 @@ export default function UsersPage() {
             const lowerTerm = searchTerm.toLowerCase()
             result = result.filter(u =>
                 u.first_name.toLowerCase().includes(lowerTerm) ||
-                u.last_name.toLowerCase().includes(lowerTerm) ||
+                (u.last_name && u.last_name.toLowerCase().includes(lowerTerm)) ||
                 u.email.toLowerCase().includes(lowerTerm)
             )
         }
